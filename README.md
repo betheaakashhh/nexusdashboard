@@ -132,7 +132,7 @@ postcss.config.js
 tailwind.config.ts
 next.config.ts
 vercel.json
-package.json                       ← replace the auto-generated one
+package.json                      
 prisma/schema.prisma
 prisma/seed.ts
 src/middleware.ts
@@ -147,9 +147,9 @@ src/hooks/useEmails.ts
 src/components/layout/Sidebar.tsx
 src/components/ui/Modal.tsx
 src/components/ui/FormField.tsx
-src/app/globals.css                ← replace auto-generated
-src/app/layout.tsx                 ← replace auto-generated
-src/app/page.tsx                   ← replace auto-generated
+src/app/globals.css                
+src/app/layout.tsx                 
+src/app/page.tsx                   
 src/app/login/page.tsx
 src/app/dashboard/layout.tsx
 src/app/dashboard/page.tsx
@@ -186,14 +186,7 @@ SETUP_SECRET="your-secret-phrase"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-Generate a secure JWT secret:
-```bash
-# macOS / Linux
-openssl rand -base64 64
 
-# Windows (PowerShell)
-[Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(64))
-```
 
 ### 6. Push Database Schema
 
@@ -381,3 +374,7 @@ npm run db:generate
 | Vercel build fails | Check all env vars are set in Vercel dashboard |
 | `Module not found: @/...` | Ensure `tsconfig.json` has `"paths": { "@/*": ["./src/*"] }` |
 | Fonts not loading | Google Fonts are loaded via `next/font` — works automatically |
+
+## Developer 
+`Aakash Kumar Sahu`
+
