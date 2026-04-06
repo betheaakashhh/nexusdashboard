@@ -4,9 +4,24 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useContacts } from '@/hooks/useContacts';
 import { useTasks } from '@/hooks/useTasks';
-import { Contact, ContactTag, SortOption } from '@/types';
+import { Contact, ContactTag, SortOption , Task } from '@/types';
 import Modal from '@/components/ui/Modal';
 import { FormField, Input, Textarea, Select, Btn } from '@/components/ui/FormField';
+
+
+type ContactFormState = {
+  name: string;
+  phone: string;
+  email: string;
+  tag: Contact['tag'];
+  notes: string;
+};
+
+type TaskFormState = {
+  title: string;
+  priority: Task['priority'];
+  due: string;
+};
 
 const TAGS: { key: ContactTag; label: string }[] = [
   { key: 'all',       label: 'All'       },
@@ -67,11 +82,27 @@ export default function ContactsPage() {
   const [taskOpen, setTaskOpen] = useState(false);
 
   // Add form
-  const [form, setForm] = useState({ name: '', phone: '', email: '', tag: 'personal', notes: '' });
+  const [form, setForm] = useState<ContactFormState>({
+    name: '',
+    phone: '',
+    email: '',
+    tag: 'personal',
+    notes: '',
+  });
   // Edit form
-  const [editForm, setEditForm] = useState({ name: '', phone: '', email: '', tag: 'personal', notes: '' });
+  const [editForm, setEditForm] = useState<ContactFormState>({
+    name: '',
+    phone: '',
+    email: '',
+    tag: 'personal',
+    notes: '',
+  });
   // Task form
-  const [taskForm, setTaskForm] = useState({ title: '', priority: 'med', due: '' });
+  const [taskForm, setTaskForm] = useState<TaskFormState>({
+    title: '',
+    priority: 'med',
+    due: '',
+  });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchContacts(); }, []);
@@ -283,7 +314,7 @@ export default function ContactsPage() {
         <FormField label="Full Name *"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="John Smith" /></FormField>
         <FormField label="Phone Number *"><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+1 234 567 8900" /></FormField>
         <FormField label="Email"><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="john@example.com" /></FormField>
-        <FormField label="Tag"><Select value={form.tag} onChange={(e) => setForm({ ...form, tag: e.target.value })} options={TAG_OPTS} /></FormField>
+        <FormField label="Tag"><Select value={form.tag} onChange={(e) => setForm({ ...form, tag: e.target.value as Contact['tag'] })} options={TAG_OPTS} /></FormField>
         <FormField label="Notes"><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Any notes…" /></FormField>
       </Modal>
 
@@ -293,7 +324,7 @@ export default function ContactsPage() {
         <FormField label="Full Name"><Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} /></FormField>
         <FormField label="Phone Number"><Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} /></FormField>
         <FormField label="Email"><Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></FormField>
-        <FormField label="Tag"><Select value={editForm.tag} onChange={(e) => setEditForm({ ...editForm, tag: e.target.value })} options={TAG_OPTS} /></FormField>
+        <FormField label="Tag"><Select value={editForm.tag} onChange={(e) => setEditForm({ ...editForm, tag: e.target.value as Contact['tag'] })} options={TAG_OPTS} /></FormField>
         <FormField label="Notes"><Textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} /></FormField>
       </Modal>
 
@@ -301,7 +332,7 @@ export default function ContactsPage() {
       <Modal open={taskOpen} onClose={() => setTaskOpen(false)} title={`Add Task for ${selected?.name || ''}`}
         footer={<><Btn variant="ghost" onClick={() => setTaskOpen(false)}>Cancel</Btn><Btn variant="primary" onClick={handleAddTask}>Add Task</Btn></>}>
         <FormField label="Task Title *"><Input value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} placeholder="What needs to be done?" /></FormField>
-        <FormField label="Priority"><Select value={taskForm.priority} onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })} options={PRIORITY_OPTS} /></FormField>
+        <FormField label="Priority"><Select value={taskForm.priority} onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value as Task['priority'] })} options={PRIORITY_OPTS} /></FormField>
         <FormField label="Due Date"><Input type="date" value={taskForm.due} onChange={(e) => setTaskForm({ ...taskForm, due: e.target.value })} /></FormField>
       </Modal>
     </div>
@@ -311,7 +342,7 @@ export default function ContactsPage() {
 // ── Contact Detail sub-component ──────────────────────────────────────────────
 function ContactDetail({ contact, tasks, onEdit, onDelete, onAddTask, onToggleTask, onDeleteTask }: {
   contact: Contact;
-  tasks: ReturnType<typeof useTasks>['tasks'];
+  tasks: Task[];
   onEdit: () => void;
   onDelete: () => void;
   onAddTask: () => void;

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTasks } from '@/hooks/useTasks';
 import { useContacts } from '@/hooks/useContacts';
-import { Task } from '@/types';
+import { Task, Contact } from '@/types';
 import Modal from '@/components/ui/Modal';
 import { FormField, Input, Select, Btn } from '@/components/ui/FormField';
 
@@ -43,7 +43,7 @@ export default function TasksPage() {
 
   async function handleAdd() {
     if (!form.title) return;
-    await addTask({ ...form, contactId: form.contactId || undefined });
+    await addTask({ ...form, priority: form.priority as 'high' | 'med' | 'low', contactId: form.contactId || undefined });
     setAddOpen(false);
     setForm({ title: '', priority: 'med', due: '', contactId: '' });
   }
@@ -62,7 +62,7 @@ export default function TasksPage() {
 
   async function handleEdit() {
     if (!editTarget) return;
-    await updateTask(editTarget.id, { ...editForm, contactId: editForm.contactId || null });
+    await updateTask(editTarget.id, { ...editForm, priority: editForm.priority as 'high' | 'med' | 'low', contactId: editForm.contactId || undefined });
     setEditOpen(false);
     setEditTarget(null);
   }
@@ -193,7 +193,7 @@ export default function TasksPage() {
 
 function TaskCard({ task, contacts, onToggle, onEdit, onDelete }: {
   task: Task;
-  contacts: ReturnType<typeof useContacts>['contacts'];
+  contacts: Contact[];
   onToggle: (id: string, done: boolean) => void;
   onEdit: (t: Task) => void;
   onDelete: (id: string) => void;
