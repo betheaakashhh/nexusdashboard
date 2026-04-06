@@ -73,7 +73,9 @@ export default function ContactsPage() {
   // Task form
   const [taskForm, setTaskForm] = useState({ title: '', priority: 'med', due: '' });
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchContacts(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (selected) fetchTasks(selected.id); }, [selected]);
 
   // Local filter by alpha

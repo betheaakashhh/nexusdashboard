@@ -27,6 +27,7 @@ export default function TasksPage() {
   const [quickTask, setQuickTask] = useState('');
   const [filterPriority, setFilterPriority] = useState<string>('all');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchTasks(); fetchContacts(); }, []);
 
   const contactOpts = [{ value: '', label: 'None' }, ...contacts.map((c) => ({ value: c.id, label: c.name }))];

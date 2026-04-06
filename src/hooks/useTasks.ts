@@ -1,83 +1,52 @@
-// src/hooks/useTasks.ts
-import { create } from 'zustand';
-import { Task } from '@/types';
-import toast from 'react-hot-toast';
+'use client';
+// src/hooks/useGsapEntrance.ts
+import { useEffect, RefObject } from 'react';
 
-interface TasksState {
-  tasks: Task[];
-  loading: boolean;
-  query: string;
-  setQuery: (q: string) => void;
-  fetchTasks: (contactId?: string) => Promise<void>;
-  addTask: (data: Partial<Task>) => Promise<Task | null>;
-  toggleTask: (id: string, done: boolean) => Promise<void>;
-  updateTask: (id: string, data: Partial<Task>) => Promise<void>;
-  deleteTask: (id: string) => Promise<void>;
-}
+export function useGsapEntrance(
+  containerRef: RefObject<HTMLElement | null>,
+  selector = '[data-animate]',
+  options?: {
+    duration?: number;
+    stagger?: number;
+    y?: number;
+    delay?: number;
+  }
+) {
+  useEffect(() => {
+    let gsap: typeof import('gsap').gsap | undefined;
+    // Capture ref value at effect run time to avoid stale ref in cleanup
+    const container = containerRef.current;
+    if (!container) return;
 
-export const useTasks = create<TasksState>((set, get) => ({
-  tasks: [],
-  loading: false,
-  query: '',
-
-  setQuery: (query) => set({ query }),
-
-  fetchTasks: async (contactId) => {
-    set({ loading: true });
-    const params = new URLSearchParams();
-    if (contactId) params.set('contactId', contactId);
-    const { query } = get();
-    if (query) params.set('q', query);
-    try {
-      const res = await fetch(`/api/tasks?${params}`);
-      const { tasks } = await res.json();
-      set({ tasks, loading: false });
-    } catch {
-      toast.error('Failed to load tasks');
-      set({ loading: false });
+    async function animate() {
+      const mod = await import('gsap');
+      gsap = mod.gsap;
+      if (!container) return;
+      const elements = container.querySelectorAll(selector);
+      if (!elements.length) return;
+      gsap.fromTo(
+        elements,
+        { opacity: 0, y: options?.y ?? 16 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: options?.duration ?? 0.4,
+          stagger:  options?.stagger  ?? 0.06,
+          delay:    options?.delay    ?? 0,
+          ease: 'power2.out',
+          clearProps: 'all',
+        }
+      );
     }
-  },
 
-  addTask: async (data) => {
-    const res = await fetch('/api/tasks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) { toast.error('Failed to add task'); return null; }
-    const { task } = await res.json();
-    set((s) => ({ tasks: [task, ...s.tasks] }));
-    toast.success('Task added');
-    return task;
-  },
+    animate();
 
-  toggleTask: async (id, done) => {
-    const res = await fetch(`/api/tasks/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ done }),
-    });
-    if (!res.ok) { toast.error('Failed to update task'); return; }
-    const { task } = await res.json();
-    set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? task : t)) }));
-  },
-
-  updateTask: async (id, data) => {
-    const res = await fetch(`/api/tasks/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) { toast.error('Failed to update task'); return; }
-    const { task } = await res.json();
-    set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? task : t)) }));
-    toast.success('Task updated');
-  },
-
-  deleteTask: async (id) => {
-    const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
-    if (!res.ok) { toast.error('Failed to delete task'); return; }
-    set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }));
-    toast.success('Task deleted');
-  },
-}));
+    return () => {
+      // Use the captured container variable, not containerRef.current
+      if (gsap && container) {
+        gsap.killTweensOf(container.querySelectorAll(selector));
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+}

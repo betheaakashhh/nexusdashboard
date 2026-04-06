@@ -39,7 +39,7 @@ export function FormField({ label, children }: FieldProps) {
   );
 }
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 export function Input(props: InputProps) {
   return (
     <input
@@ -51,7 +51,7 @@ export function Input(props: InputProps) {
   );
 }
 
-interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 export function Textarea(props: TextareaProps) {
   return (
     <textarea

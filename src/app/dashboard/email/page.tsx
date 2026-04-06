@@ -33,6 +33,7 @@ export default function EmailPage() {
   const [composeForm, setComposeForm] = useState({ to: '', subject: '', body: '' });
   const [replyTo, setReplyTo] = useState<Email | null>(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchEmails(); }, []);
 
   const displayed = emails.filter((e) => {
