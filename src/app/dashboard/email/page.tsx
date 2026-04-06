@@ -116,7 +116,7 @@ export default function EmailPage() {
                   flex: 1, padding: '11px', textAlign: 'center', fontSize: '12px', cursor: 'pointer',
                   color: tab === t.key ? 'var(--accent2)' : 'var(--text3)',
                   borderBottom: `2px solid ${tab === t.key ? 'var(--accent)' : 'transparent'}`,
-                  background: 'transparent', border: 'none', borderBottom: `2px solid ${tab === t.key ? 'var(--accent)' : 'transparent'}`,
+                  background: 'transparent', border: 'none',
                   fontFamily: 'var(--font-syne)', fontWeight: 600, transition: 'all 0.15s',
                 }}
               >{t.label}</button>
