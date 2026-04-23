@@ -74,8 +74,8 @@ export function Select({ options, ...props }: SelectProps) {
       onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; props.onFocus?.(e); }}
       onBlur={(e)  => { e.currentTarget.style.borderColor = 'var(--border)';  props.onBlur?.(e);  }}
     >
-      {options.map((o) => (
-        <option key={o.value} value={o.value} style={{ background: 'var(--bg2)' }}>
+      {options.map((o, idx) => (
+        <option key={`${o.value}-${idx}`} value={o.value} style={{ background: 'var(--bg2)' }}>
           {o.label}
         </option>
       ))}
