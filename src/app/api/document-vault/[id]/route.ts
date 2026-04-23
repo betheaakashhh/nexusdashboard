@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/auth';
 
+
 async function getItem(id: string, userId: string) {
   return prisma.documentVaultItem.findFirst({ where: { id, userId } });
 }

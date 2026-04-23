@@ -1,7 +1,11 @@
 // src/app/api/document-vault/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/auth';
+
+
+
 
 export async function GET(req: NextRequest) {
   const session = getSessionFromRequest(req);

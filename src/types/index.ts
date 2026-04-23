@@ -125,3 +125,4 @@ export type ContactTag = 'all' | 'personal' | 'family' | 'work' | 'emergency';
 export type SortOption = 'recent' | 'name' | 'added';
 export type EmailTab = 'inbox' | 'sent' | 'starred';
 export type VaultCategory = 'all' | 'general' | 'educational' | 'bank' | 'social' | 'work';
+
