@@ -2,39 +2,18 @@
 // src/components/layout/Sidebar.tsx
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 
-const navItems = [
+const NAV = [
   {
     href: '/dashboard/contacts',
     label: 'Contacts',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <circle cx="8" cy="5" r="3" />
-        <path d="M1.5 14c0-3.31 2.91-6 6.5-6s6.5 2.69 6.5 6" />
-      </svg>
-    ),
-    iconSm: (
-      <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <circle cx="8" cy="5" r="3" />
-        <path d="M1.5 14c0-3.31 2.91-6 6.5-6s6.5 2.69 6.5 6" />
-      </svg>
-    ),
-  },
-  {
-    href: '/dashboard/email',
-    label: 'Email',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="1.5" y="3" width="13" height="10" rx="1.5" />
-        <path d="M1.5 5l6.5 4 6.5-4" />
-      </svg>
-    ),
-    iconSm: (
-      <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="1.5" y="3" width="13" height="10" rx="1.5" />
-        <path d="M1.5 5l6.5 4 6.5-4" />
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
       </svg>
     ),
   },
@@ -42,15 +21,29 @@ const navItems = [
     href: '/dashboard/tasks',
     label: 'Tasks',
     icon: (
-      <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="2" y="2" width="12" height="12" rx="2" />
-        <path d="M5 8l2.5 2.5L11 5.5" />
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
       </svg>
     ),
-    iconSm: (
-      <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="2" y="2" width="12" height="12" rx="2" />
-        <path d="M5 8l2.5 2.5L11 5.5" />
+  },
+  {
+    href: '/dashboard/email',
+    label: 'Email',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <rect x="2" y="4" width="20" height="16" rx="2"/>
+        <path d="M2 8l10 6 10-6"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/dashboard/private',
+    label: 'Private',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
       </svg>
     ),
   },
@@ -60,13 +53,9 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
-  const initials = user?.name
-    ? user.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
-    : 'ME';
-
   return (
     <>
-      {/* ── Desktop Sidebar ─────────────────────────────── */}
+      {/* ── Desktop Sidebar ──────────────────────────────────────────────────── */}
       <aside
         className="desktop-sidebar"
         style={{
@@ -77,135 +66,106 @@ export default function Sidebar() {
           display: 'flex',
           flexDirection: 'column',
           height: '100vh',
+          overflow: 'hidden',
         }}
       >
-        {/* Brand */}
-        <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid var(--border)' }}>
-          <div
-            style={{
-              fontFamily: 'var(--font-syne)',
-              fontWeight: 800,
-              fontSize: '20px',
-              letterSpacing: '-0.5px',
-              background: 'linear-gradient(135deg, #8b7fff, #ff6b9d)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
+        {/* Logo */}
+        <div style={{
+          padding: '20px 20px 16px',
+          borderBottom: '1px solid var(--border)',
+          flexShrink: 0,
+        }}>
+          <div style={{
+            fontFamily: 'var(--font-syne)',
+            fontWeight: 800,
+            fontSize: '20px',
+            letterSpacing: '-0.8px',
+            background: 'linear-gradient(135deg, #8b7fff, #ff6b9d)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>
             Nexus
           </div>
-          <div style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '2px', letterSpacing: '1px', textTransform: 'uppercase' }}>
-            Personal Dashboard
-          </div>
+          {user && (
+            <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.name}
+            </div>
+          )}
         </div>
 
         {/* Nav */}
-        <nav style={{ flex: 1, padding: '12px 8px', overflowY: 'auto' }}>
-          <div style={{ fontSize: '9px', letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--text3)', padding: '0 10px', marginBottom: '6px', fontFamily: 'var(--font-syne)' }}>
-            Workspace
-          </div>
-
-          {navItems.map((item) => {
+        <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
+          {NAV.map((item) => {
             const active = pathname.startsWith(item.href);
             return (
-              <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-                <motion.div
-                  whileHover={{ x: 2 }}
-                  whileTap={{ scale: 0.98 }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '9px 10px',
-                    borderRadius: 'var(--r2)',
-                    cursor: 'pointer',
-                    color: active ? 'var(--text)' : 'var(--text2)',
-                    background: active ? 'var(--bg4)' : 'transparent',
-                    marginBottom: '2px',
-                    position: 'relative',
-                    fontSize: '13.5px',
-                    fontWeight: active ? 500 : 400,
-                    transition: 'background 0.15s, color 0.15s',
-                  }}
-                >
-                  {active && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: '25%',
-                        bottom: '25%',
-                        width: '2px',
-                        background: 'var(--accent)',
-                        borderRadius: '2px',
-                      }}
-                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                    />
-                  )}
-                  <span style={{ opacity: active ? 1 : 0.6 }}>{item.icon}</span>
-                  {item.label}
-                </motion.div>
+              <Link
+                key={item.href}
+                href={item.href}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '9px 12px',
+                  borderRadius: 'var(--r2)',
+                  marginBottom: '2px',
+                  color: active ? 'var(--accent2)' : 'var(--text2)',
+                  background: active ? 'var(--accent3)' : 'transparent',
+                  textDecoration: 'none',
+                  fontSize: '13.5px',
+                  fontWeight: active ? 600 : 400,
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) e.currentTarget.style.background = 'var(--bg3)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                <span style={{ color: active ? 'var(--accent)' : 'var(--text3)', flexShrink: 0 }}>
+                  {item.icon}
+                </span>
+                {item.label}
               </Link>
             );
           })}
         </nav>
 
-        {/* User */}
-        <div style={{ padding: '12px 10px', borderTop: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px' }}>
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, var(--accent), var(--pink))',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '12px',
-                fontWeight: 700,
-                fontFamily: 'var(--font-syne)',
-                color: '#fff',
-                flexShrink: 0,
-              }}
-            >
-              {initials}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '13px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user?.name || 'Admin'}
-              </div>
-              <div style={{ fontSize: '10px', color: 'var(--text3)' }}>Owner</div>
-            </div>
-            <button
-              onClick={logout}
-              title="Logout"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--text3)',
-                padding: '4px',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                transition: 'color 0.15s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--red)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text3)')}
-            >
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3M10 11l3-3-3-3M13 8H6" />
-              </svg>
-            </button>
-          </div>
+        {/* Footer */}
+        <div style={{ padding: '12px 10px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+          <button
+            onClick={logout}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              width: '100%',
+              padding: '9px 12px',
+              borderRadius: 'var(--r2)',
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text3)',
+              fontSize: '13px',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+              textAlign: 'left',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg3)'; e.currentTarget.style.color = 'var(--red)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text3)'; }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Sign Out
+          </button>
         </div>
       </aside>
 
-      {/* ── Mobile Bottom Nav ────────────────────────────── */}
+      {/* ── Mobile Bottom Nav ────────────────────────────────────────────────── */}
       <nav className="mobile-nav">
-        {navItems.map((item) => {
+        {NAV.map((item) => {
           const active = pathname.startsWith(item.href);
           return (
             <Link
@@ -215,106 +175,22 @@ export default function Sidebar() {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px',
-                flex: 1,
-                padding: '8px 4px',
-                textDecoration: 'none',
+                gap: '3px',
+                padding: '6px 10px',
                 color: active ? 'var(--accent2)' : 'var(--text3)',
+                textDecoration: 'none',
+                fontSize: '10px',
+                fontWeight: active ? 600 : 400,
+                flex: 1,
+                borderRadius: 'var(--r2)',
                 transition: 'color 0.15s',
-                position: 'relative',
               }}
             >
-              {active && (
-                <motion.div
-                  layoutId="mobileActiveIndicator"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '32px',
-                    height: '2px',
-                    background: 'var(--accent)',
-                    borderRadius: '0 0 2px 2px',
-                  }}
-                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                />
-              )}
-              <motion.div
-                whileTap={{ scale: 0.85 }}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                <div
-                  style={{
-                    width: '40px',
-                    height: '32px',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: active ? 'var(--accent3)' : 'transparent',
-                    transition: 'background 0.2s',
-                  }}
-                >
-                  {item.iconSm}
-                </div>
-                <span style={{
-                  fontSize: '10px',
-                  fontFamily: 'var(--font-syne)',
-                  fontWeight: active ? 600 : 400,
-                  letterSpacing: '0.2px',
-                }}>
-                  {item.label}
-                </span>
-              </motion.div>
+              <span style={{ color: active ? 'var(--accent)' : 'var(--text3)' }}>{item.icon}</span>
+              {item.label}
             </Link>
           );
         })}
-
-        {/* Profile/logout in mobile nav */}
-        <button
-          onClick={logout}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '4px',
-            flex: 1,
-            padding: '8px 4px',
-            background: 'none',
-            border: 'none',
-            color: 'var(--text3)',
-            cursor: 'pointer',
-          }}
-        >
-          <motion.div whileTap={{ scale: 0.85 }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, var(--accent), var(--pink))',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '11px',
-              fontWeight: 700,
-              fontFamily: 'var(--font-syne)',
-              color: '#fff',
-            }}>
-              {initials}
-            </div>
-          </motion.div>
-          <span style={{ fontSize: '10px', fontFamily: 'var(--font-syne)', fontWeight: 400, letterSpacing: '0.2px' }}>
-            Me
-          </span>
-        </button>
       </nav>
     </>
   );

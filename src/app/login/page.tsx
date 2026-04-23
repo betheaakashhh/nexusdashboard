@@ -2,6 +2,7 @@
 // src/app/login/page.tsx
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
@@ -32,8 +33,6 @@ export default function LoginPage() {
         return;
       }
 
-      // Verify the cookie was actually set by immediately calling /api/auth/me
-      // If it returns 200 the cookie is live and we can navigate
       let attempts = 0;
       const maxAttempts = 10;
 
@@ -44,26 +43,20 @@ export default function LoginPage() {
             credentials: 'same-origin',
             cache: 'no-store',
           });
-
           if (check.ok) {
-            // Cookie is confirmed live — do a hard navigation
             toast.success('Welcome back!');
             window.location.replace('/dashboard/contacts');
             return;
           }
-        } catch {
-          // ignore, retry
-        }
+        } catch { /* ignore, retry */ }
 
         if (attempts < maxAttempts) {
           setTimeout(checkAndRedirect, 150);
         } else {
-          // Fallback: try navigating anyway after timeout
           window.location.replace('/dashboard/contacts');
         }
       };
 
-      // Small initial delay for cookie to be written by the browser
       setTimeout(checkAndRedirect, 200);
 
     } catch {
@@ -133,8 +126,9 @@ export default function LoginPage() {
           </motion.button>
         </form>
 
-        <div style={{ marginTop: '24px', padding: '12px', background: 'var(--bg3)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', fontSize: '11.5px', color: 'var(--text3)', lineHeight: 1.6 }}>
-          Only the registered admin can log in.
+        <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '13px', color: 'var(--text3)' }}>
+          Don&apos;t have an account?{' '}
+          <Link href="/register" style={{ color: 'var(--accent2)', textDecoration: 'none', fontWeight: 500 }}>Create one</Link>
         </div>
       </motion.div>
     </div>

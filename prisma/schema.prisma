@@ -13,14 +13,18 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
-  name      String   @default("Admin")
-  role      String   @default("admin")
+  name      String   @default("User")
+  role      String   @default("user")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  contacts Contact[]
-  tasks    Task[]
-  emails   Email[]
+  contacts        Contact[]
+  tasks           Task[]
+  emails          Email[]
+  vaultEntries    VaultEntry[]
+  educationCerts  EducationCert[]
+  personalDocs    PersonalDoc[]
+  documentVault   DocumentVaultItem[]
 }
 
 model Contact {
@@ -28,7 +32,7 @@ model Contact {
   name      String
   phone     String
   email     String?
-  tag       String   @default("personal") // personal | family | work | emergency
+  tag       String   @default("personal")
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -43,7 +47,7 @@ model Contact {
 model Task {
   id        String    @id @default(cuid())
   title     String
-  priority  String    @default("med") // high | med | low
+  priority  String    @default("med")
   due       String?
   done      Boolean   @default(false)
   createdAt DateTime  @default(now())
@@ -64,12 +68,93 @@ model Email {
   subject     String
   body        String
   preview     String?
-  tab         String   @default("inbox") // inbox | sent | starred
+  tab         String   @default("inbox")
   unread      Boolean  @default(true)
   starred     Boolean  @default(false)
   sentAt      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ── Private Vault ───────────────────────────────────────────────────────────
+model VaultEntry {
+  id                 String   @id @default(cuid())
+  name               String   // label / whose credential (e.g. "Mom's email")
+  userId_field       String?  // the stored username/email/ID
+  password           String?  // plain text — user's explicit choice
+  registrationNumber String?  // for educational/gov registrations
+  link               String?  // URL of the platform
+  category           String   @default("general") // general | educational | bank | social | work
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ── Education Certificates ──────────────────────────────────────────────────
+model EducationCert {
+  id           String   @id @default(cuid())
+  ownerName    String   // whose certificate (filter tag)
+  examName     String   // "10th", "12th", "Graduation", or custom
+  institution  String?
+  year         String?
+  grade        String?
+  rollNumber   String?
+  fileData     String?  // base64 encoded file
+  fileType     String?  // "image/jpeg", "application/pdf", etc.
+  fileName     String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ── Personal Documents ──────────────────────────────────────────────────────
+model PersonalDoc {
+  id          String   @id @default(cuid())
+  ownerName   String   // whose document
+  docType     String   // "pan_card" | "aadhar" | "aapar_id" | "passport" | "voter_id" | "driving_license" | "custom"
+  customLabel String?  // if docType === "custom"
+  docNumber   String?
+  fileData    String?  // base64
+  fileType    String?
+  fileName    String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ── Document Vault (general file storage) ──────────────────────────────────
+model DocumentVaultItem {
+  id        String   @id @default(cuid())
+  name      String   // display name
+  tag       String?  // user-defined tag for filtering
+  idType    String?  // document category label
+  fileData  String   // base64
+  fileType  String   // mime type
+  fileName  String   // original filename
+  fileSize  Int?     // bytes
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
