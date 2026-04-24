@@ -1,4 +1,6 @@
-// prisma/schema.prisma
+// prisma/schema.prisma — FULL MERGED SCHEMA
+// Replace your existing schema.prisma with this complete version
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -18,13 +20,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  contacts        Contact[]
-  tasks           Task[]
-  emails          Email[]
-  vaultEntries    VaultEntry[]
-  educationCerts  EducationCert[]
-  personalDocs    PersonalDoc[]
-  documentVault   DocumentVaultItem[]
+  contacts          Contact[]
+  tasks             Task[]
+  emails            Email[]
+  vaultEntries      VaultEntry[]
+  educationRecords  EducationRecord[]
+  personalDocuments PersonalDocument[]
+  documentVault     DocumentVault[]
 }
 
 model Contact {
@@ -32,7 +34,7 @@ model Contact {
   name      String
   phone     String
   email     String?
-  tag       String   @default("personal")
+  tag       String   @default("personal") // personal | family | work | emergency
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -45,16 +47,16 @@ model Contact {
 }
 
 model Task {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   title     String
-  priority  String    @default("med")
+  priority  String   @default("med") // high | med | low
   due       String?
-  done      Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   userId    String
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   contactId String?
   contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
@@ -68,7 +70,7 @@ model Email {
   subject     String
   body        String
   preview     String?
-  tab         String   @default("inbox")
+  tab         String   @default("inbox") // inbox | sent | starred
   unread      Boolean  @default(true)
   starred     Boolean  @default(false)
   sentAt      String?
@@ -81,15 +83,14 @@ model Email {
   @@index([userId])
 }
 
-// ── Private Vault ───────────────────────────────────────────────────────────
+// ── Password / Credential Vault ───────────────────────────────────────────────
 model VaultEntry {
   id                 String   @id @default(cuid())
-  name               String   // label / whose credential (e.g. "Mom's email")
-  userId_field       String?  // the stored username/email/ID
-  password           String?  // plain text — user's explicit choice
-  registrationNumber String?  // for educational/gov registrations
-  link               String?  // URL of the platform
-  category           String   @default("general") // general | educational | bank | social | work
+  name               String                    // label / owner e.g. "Ranjan", "My Bank"
+  userId_field       String?                   // login username or user ID
+  password           String                    // stored plain (user controls this)
+  registrationNumber String?                   // for educational / govt portals
+  link               String?                   // direct URL to the platform
   notes              String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -100,19 +101,20 @@ model VaultEntry {
   @@index([userId])
 }
 
-// ── Education Certificates ──────────────────────────────────────────────────
-model EducationCert {
+// ── Education Records ────────────────────────────────────────────────────────
+model EducationRecord {
   id           String   @id @default(cuid())
-  ownerName    String   // whose certificate (filter tag)
-  examName     String   // "10th", "12th", "Graduation", or custom
+  personName   String                         // "Self", "Ranjan", "Mom" — filter tag
+  level        String                         // "10th", "12th", "Graduation", custom
   institution  String?
+  board        String?                        // CBSE, CGBSE, VTU, etc.
   year         String?
-  grade        String?
+  percentage   String?
   rollNumber   String?
-  fileData     String?  // base64 encoded file
-  fileType     String?  // "image/jpeg", "application/pdf", etc.
-  fileName     String?
   notes        String?
+  fileUrl      String?  @db.Text             // base64 or URL (image/pdf)
+  fileName     String?
+  fileType     String?                        // "image" | "pdf"
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -122,19 +124,21 @@ model EducationCert {
   @@index([userId])
 }
 
-// ── Personal Documents ──────────────────────────────────────────────────────
-model PersonalDoc {
-  id          String   @id @default(cuid())
-  ownerName   String   // whose document
-  docType     String   // "pan_card" | "aadhar" | "aapar_id" | "passport" | "voter_id" | "driving_license" | "custom"
-  customLabel String?  // if docType === "custom"
-  docNumber   String?
-  fileData    String?  // base64
-  fileType    String?
-  fileName    String?
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// ── Personal Identity Documents ──────────────────────────────────────────────
+model PersonalDocument {
+  id           String   @id @default(cuid())
+  personName   String                         // "Self", "Dad", "Ranjan" — filter tag
+  docType      String                         // "Aadhaar Card", "PAN Card", "Passport", custom
+  docNumber    String?
+  issuedBy     String?
+  issuedDate   String?
+  expiryDate   String?
+  notes        String?
+  fileUrl      String?  @db.Text             // base64 or URL
+  fileName     String?
+  fileType     String?                        // "image" | "pdf"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -142,19 +146,19 @@ model PersonalDoc {
   @@index([userId])
 }
 
-// ── Document Vault (general file storage) ──────────────────────────────────
-model DocumentVaultItem {
-  id        String   @id @default(cuid())
-  name      String   // display name
-  tag       String?  // user-defined tag for filtering
-  idType    String?  // document category label
-  fileData  String   // base64
-  fileType  String   // mime type
-  fileName  String   // original filename
-  fileSize  Int?     // bytes
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ── General Document Vault ───────────────────────────────────────────────────
+model DocumentVault {
+  id          String   @id @default(cuid())
+  name        String                          // document display name
+  tag         String?                         // "invoice", "certificate", "photo", custom
+  idType      String?                         // "Government", "Personal", "Work", custom
+  description String?
+  fileUrl     String?  @db.Text             // base64 or URL
+  fileName    String?
+  fileType    String?                         // "image" | "pdf" | "doc" | other
+  fileSize    Int?                            // bytes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

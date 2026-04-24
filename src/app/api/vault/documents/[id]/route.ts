@@ -1,40 +1,41 @@
-// src/app/api/vault/[id]/route.ts
+// src/app/api/vault/documents/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/auth';
 
-async function getEntry(id: string, userId: string) {
-  return prisma.vaultEntry.findFirst({ where: { id, userId } });
+async function getDoc(id: string, userId: string) {
+  return prisma.documentVault.findFirst({ where: { id, userId } });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = getSessionFromRequest(req);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
-  const existing = await getEntry(id, session.userId);
+  const existing = await getDoc(id, session.userId);
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
   const data = await req.json();
-  const entry = await prisma.vaultEntry.update({
+  const doc = await prisma.documentVault.update({
     where: { id },
     data: {
-      name:               data.name               ?? existing.name,
-      userId_field:       data.userId_field        ?? existing.userId_field,
-      password:           data.password            ?? existing.password,
-      registrationNumber: data.registrationNumber  ?? existing.registrationNumber,
-      link:               data.link               ?? existing.link,
-      notes:              data.notes              ?? existing.notes,
+      name:        data.name        ?? existing.name,
+      tag:         data.tag         ?? existing.tag,
+      idType:      data.idType      ?? existing.idType,
+      description: data.description ?? existing.description,
+      fileUrl:     data.fileUrl     ?? existing.fileUrl,
+      fileName:    data.fileName    ?? existing.fileName,
+      fileType:    data.fileType    ?? existing.fileType,
+      fileSize:    data.fileSize    ?? existing.fileSize,
     },
   });
-  return NextResponse.json({ entry });
+  return NextResponse.json({ doc });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = getSessionFromRequest(req);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
-  const existing = await getEntry(id, session.userId);
+  const existing = await getDoc(id, session.userId);
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  await prisma.vaultEntry.delete({ where: { id } });
+  await prisma.documentVault.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

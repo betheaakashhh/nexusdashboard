@@ -1,8 +1,7 @@
 'use client';
-// src/app/login/page.tsx
+// src/app/login/page.tsx  — updated to include Register link
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
@@ -34,29 +33,15 @@ export default function LoginPage() {
       }
 
       let attempts = 0;
-      const maxAttempts = 10;
-
       const checkAndRedirect = async () => {
         attempts++;
         try {
-          const check = await fetch('/api/auth/me', {
-            credentials: 'same-origin',
-            cache: 'no-store',
-          });
-          if (check.ok) {
-            toast.success('Welcome back!');
-            window.location.replace('/dashboard/contacts');
-            return;
-          }
-        } catch { /* ignore, retry */ }
-
-        if (attempts < maxAttempts) {
-          setTimeout(checkAndRedirect, 150);
-        } else {
-          window.location.replace('/dashboard/contacts');
-        }
+          const check = await fetch('/api/auth/me', { credentials: 'same-origin', cache: 'no-store' });
+          if (check.ok) { toast.success('Welcome back!'); window.location.replace('/dashboard/contacts'); return; }
+        } catch { /* ignore */ }
+        if (attempts < 10) setTimeout(checkAndRedirect, 150);
+        else window.location.replace('/dashboard/contacts');
       };
-
       setTimeout(checkAndRedirect, 200);
 
     } catch {
@@ -85,50 +70,33 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Email</label>
-            <input
-              ref={emailRef}
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              style={inputStyle}
+            <input ref={emailRef} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-              onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--border)')}
-            />
+              onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--border)')} />
           </div>
 
           <div style={{ marginBottom: '24px' }}>
             <label style={labelStyle}>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              style={inputStyle}
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required style={inputStyle}
               onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-              onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--border)')}
-            />
+              onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--border)')} />
           </div>
 
-          <motion.button
-            type="submit"
-            disabled={loading}
+          <motion.button type="submit" disabled={loading}
             whileHover={{ scale: loading ? 1 : 1.01 }}
             whileTap={{ scale: loading ? 1 : 0.98 }}
-            style={{ width: '100%', padding: '11px', background: loading ? 'var(--accent3)' : 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--r2)', fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-syne)', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-          >
-            {loading && (
-              <span style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
-            )}
+            style={{ width: '100%', padding: '11px', background: loading ? 'var(--accent3)' : 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--r2)', fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-syne)', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            {loading && <span style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />}
             {loading ? 'Signing in…' : 'Sign In'}
           </motion.button>
         </form>
 
-        <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '13px', color: 'var(--text3)' }}>
-          Don&apos;t have an account?{' '}
-          <Link href="/register" style={{ color: 'var(--accent2)', textDecoration: 'none', fontWeight: 500 }}>Create one</Link>
+        {/* Register link */}
+        <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '12.5px', color: 'var(--text3)' }}>
+          New here?{' '}
+          <a href="/register" style={{ color: 'var(--accent2)', textDecoration: 'none', fontWeight: 500 }}>
+            Create an account
+          </a>
         </div>
       </motion.div>
     </div>

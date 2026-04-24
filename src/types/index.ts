@@ -47,82 +47,65 @@ export interface Email {
   userId: string;
 }
 
-// ── Private Vault ────────────────────────────────────────────────────────────
 export interface VaultEntry {
   id: string;
   name: string;
   userId_field?: string;
-  password?: string;
+  password: string;
   registrationNumber?: string;
   link?: string;
-  category: 'general' | 'educational' | 'bank' | 'social' | 'work';
   notes?: string;
   createdAt: string;
-  updatedAt: string;
   userId: string;
 }
 
-// ── Education Certificates ───────────────────────────────────────────────────
-export interface EducationCert {
+export interface EducationRecord {
   id: string;
-  ownerName: string;
-  examName: string;
+  personName: string;
+  level: string;
   institution?: string;
+  board?: string;
   year?: string;
-  grade?: string;
+  percentage?: string;
   rollNumber?: string;
-  fileData?: string;
-  fileType?: string;
-  fileName?: string;
   notes?: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: string;
   createdAt: string;
-  updatedAt: string;
   userId: string;
 }
 
-// ── Personal Documents ───────────────────────────────────────────────────────
-export type PersonalDocType =
-  | 'pan_card'
-  | 'aadhar'
-  | 'aapar_id'
-  | 'passport'
-  | 'voter_id'
-  | 'driving_license'
-  | 'custom';
-
-export interface PersonalDoc {
+export interface PersonalDocument {
   id: string;
-  ownerName: string;
-  docType: PersonalDocType;
-  customLabel?: string;
+  personName: string;
+  docType: string;
   docNumber?: string;
-  fileData?: string;
-  fileType?: string;
-  fileName?: string;
+  issuedBy?: string;
+  issuedDate?: string;
+  expiryDate?: string;
   notes?: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: string;
   createdAt: string;
-  updatedAt: string;
   userId: string;
 }
 
-// ── Document Vault ───────────────────────────────────────────────────────────
-export interface DocumentVaultItem {
+export interface DocumentVault {
   id: string;
   name: string;
   tag?: string;
   idType?: string;
-  fileData: string;
-  fileType: string;
-  fileName: string;
+  description?: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileType?: string;
   fileSize?: number;
-  notes?: string;
   createdAt: string;
-  updatedAt: string;
   userId: string;
 }
 
 export type ContactTag = 'all' | 'personal' | 'family' | 'work' | 'emergency';
 export type SortOption = 'recent' | 'name' | 'added';
 export type EmailTab = 'inbox' | 'sent' | 'starred';
-export type VaultCategory = 'all' | 'general' | 'educational' | 'bank' | 'social' | 'work';
-

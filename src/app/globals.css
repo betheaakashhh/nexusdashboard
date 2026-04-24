@@ -25,7 +25,6 @@
   --r2:  8px;
   --r3:  4px;
 
-  /* Mobile nav height */
   --mobile-nav-height: 64px;
   --topbar-height: 56px;
 }
@@ -65,15 +64,15 @@ html, body {
 /* Typography helpers */
 .font-syne { font-family: var(--font-syne), 'Syne', sans-serif; }
 
-/* Animations */
-@keyframes fadeIn    { from { opacity: 0 }                      to { opacity: 1 } }
-@keyframes slideUp   { from { transform: translateY(12px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
-@keyframes slideIn   { from { transform: translateX(10px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
-@keyframes slideDown { from { transform: translateY(-8px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+/* ── Animations ─────────────────────────────────────────────────────────── */
+@keyframes fadeIn    { from { opacity: 0 }                               to { opacity: 1 } }
+@keyframes slideUp   { from { transform: translateY(12px); opacity: 0 }  to { transform: translateY(0); opacity: 1 } }
+@keyframes slideIn   { from { transform: translateX(10px); opacity: 0 }  to { transform: translateX(0); opacity: 1 } }
+@keyframes slideDown { from { transform: translateY(-8px); opacity: 0 }  to { transform: translateY(0); opacity: 1 } }
 @keyframes scaleIn   { from { transform: scale(0.96); opacity: 0 }       to { transform: scale(1);    opacity: 1 } }
 @keyframes spin      { to   { transform: rotate(360deg) } }
 @keyframes slideUpPanel { from { transform: translateY(100%); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
-@keyframes ripple    { from { transform: scale(0); opacity: 0.4 } to { transform: scale(2.5); opacity: 0 } }
+@keyframes ripple    { from { transform: scale(0); opacity: 0.4 }        to { transform: scale(2.5); opacity: 0 } }
 
 .animate-fade-in   { animation: fadeIn   0.2s ease forwards; }
 .animate-slide-up  { animation: slideUp  0.25s ease forwards; }
@@ -93,13 +92,14 @@ input[type='date']::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
-/* ── Mobile Bottom Nav ───────────────────────────────────────────────── */
+/* ── Mobile Bottom Nav ───────────────────────────────────────────────────── */
 .mobile-nav {
   display: none;
 }
 
-/* ── Responsive breakpoints ─────────────────────────────────────────── */
+/* ── Responsive breakpoints ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
+
   /* Show mobile nav, hide sidebar */
   .mobile-nav {
     display: flex;
@@ -186,6 +186,25 @@ input[type='date']::-webkit-calendar-picker-indicator {
   .topbar-import-btn {
     display: none !important;
   }
+
+  /* ── Vault mobile ────────────────────────────────────────────────────── */
+  .vault-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .vault-btn-label {
+    display: none !important;
+  }
+
+  /* Vault section tabs scroll on small screens */
+  .vault-section-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .vault-section-tabs::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -195,6 +214,11 @@ input[type='date']::-webkit-calendar-picker-indicator {
 
   .topbar-actions {
     gap: 6px !important;
+  }
+
+  /* Stack vault cards full width on very small screens */
+  .vault-grid {
+    gap: 8px !important;
   }
 }
 
@@ -208,6 +232,11 @@ input[type='date']::-webkit-calendar-picker-indicator {
   .email-list-panel {
     width: 260px !important;
     min-width: 260px !important;
+  }
+
+  /* 2-col vault grid on tablet */
+  .vault-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 
@@ -230,6 +259,12 @@ input[type='date']::-webkit-calendar-picker-indicator {
   .contact-list-item:active,
   .email-list-item:active {
     background: var(--bg4) !important;
+    transform: scale(0.99);
+    transition: transform 0.1s ease !important;
+  }
+
+  /* Vault card touch feedback */
+  .vault-card:active {
     transform: scale(0.99);
     transition: transform 0.1s ease !important;
   }

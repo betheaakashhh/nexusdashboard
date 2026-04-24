@@ -10,13 +10,14 @@ const PUBLIC_PATHS = [
   '/register',
   '/api/auth/login',
   '/api/auth/logout',
-  '/api/auth/setup',
   '/api/auth/register',
+  '/api/auth/setup',
 ];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Allow static files and Next.js internals
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||
@@ -25,10 +26,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow public paths
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
+  // Check cookie exists (full JWT verification happens in each API route)
   const token = request.cookies.get(COOKIE_NAME)?.value;
 
   if (!token) {
