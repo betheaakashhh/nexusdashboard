@@ -3,18 +3,20 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useSettings } from '@/hooks/useSettings';
 import Sidebar from '@/components/layout/Sidebar';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, fetchMe } = useAuth();
+  const { fetchSettings } = useSettings();
   const router = useRouter();
-  // Use a ref so the effect only runs once on mount, not every render
   const fetched = useRef(false);
 
   useEffect(() => {
     if (!fetched.current) {
       fetched.current = true;
       fetchMe();
+      fetchSettings(); // load & apply settings on mount
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

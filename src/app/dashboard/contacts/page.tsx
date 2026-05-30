@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Fuse from 'fuse.js';
+import Fuse, { IFuseOptions } from 'fuse.js';
 import { useContacts } from '@/hooks/useContacts';
 import { useTasks } from '@/hooks/useTasks';
 import { Contact, ContactTag, SortOption, Task } from '@/types';
@@ -80,7 +80,7 @@ const PRIORITY_COLOR: Record<string, string> = {
 
 // ── Fuse.js config ────────────────────────────────────────────────────────────
 // Weights: name is most important, then phone, then email, then notes
-const FUSE_OPTIONS: Fuse.IFuseOptions<Contact> = {
+const FUSE_OPTIONS: IFuseOptions<Contact> = {
   keys: [
     { name: 'name',  weight: 0.5 },
     { name: 'phone', weight: 0.3 },
