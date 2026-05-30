@@ -4,23 +4,30 @@
 @tailwind utilities;
 
 :root {
-  --bg:      #0a0a0f;
-  --bg2:     #111118;
-  --bg3:     #18181f;
-  --bg4:     #1e1e28;
-  --border:  #2a2a38;
-  --border2: #3a3a4a;
-  --text:    #e8e8f0;
-  --text2:   #9090a8;
-  --text3:   #5a5a70;
-  --accent:  #6c63ff;
-  --accent2: #8b7fff;
-  --accent3: #1e1a4a;
-  --green:   #22c77a;
-  --red:     #ff4d6a;
-  --amber:   #ffb547;
-  --blue:    #4d9fff;
-  --pink:    #ff6b9d;
+  --bg:      #1c1b19;   /* deepest / page bg */
+  --bg2:     #24231f;   /* app shell */
+  --bg3:     #262624;   /* sidebar */
+  --bg4:     #2e2d2b;   /* cards */
+  --bg5:     #30302e;   /* main content area */
+  --bg6:     #383632;   /* hover / elevated surfaces */
+
+  --border:  #3a3832;   /* subtle borders */
+  --border2: #4a4844;   /* emphasis borders */
+
+  --text:    #e8e4dc;   /* primary text — warm white */
+  --text2:   #a09890;   /* secondary text */
+  --text3:   #5e5a54;   /* muted / hints */
+
+  --accent:  #c9a96e;   /* amber gold — primary accent */
+  --accent2: #d4b97e;   /* accent light */
+  --accent3: #3a3020;   /* accent background tint */
+
+  --green:   #4db88a;
+  --red:     #e05c6a;
+  --amber:   #e89a45;
+  --blue:    #6aa3d8;
+  --pink:    #c97eaa;
+
   --r:  12px;
   --r2:  8px;
   --r3:  4px;
