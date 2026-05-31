@@ -17,13 +17,19 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Nexus — Personal Dashboard',
+  title: 'Xprivate+ — Access your data from anywhere',
   description: 'Your private personal dashboard',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${syne.variable} ${dmSans.variable}`}>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css"
+        />
+      </head>
       <body>
         {children}
         <Toaster

@@ -11,13 +11,14 @@ import { FormField, Input, Btn } from '@/components/ui/FormField';
 
 // ─── Section tabs ─────────────────────────────────────────────────────────────
 const SECTIONS = [
-  { key: 'appearance', label: 'Appearance', icon: '🎨' },
-  { key: 'security',   label: 'Security',   icon: '🔒' },
-  { key: 'email',      label: 'Email',      icon: '✉️'  },
-  { key: 'contacts',   label: 'Contacts',   icon: '👤' },
-  { key: 'data',       label: 'Data',       icon: '💾' },
+  { key: 'appearance', label: 'Appearance', icon: 'fi fi-rr-palette' },
+  { key: 'security',   label: 'Security',   icon: 'fi fi-rr-shield' },
+  { key: 'email',      label: 'Email',      icon: 'fi fi-rr-envelope' },
+  { key: 'contacts',   label: 'Contacts',   icon: 'fi fi-rr-user' },
+  { key: 'data',       label: 'Data',       icon: 'fi fi-rr-database' },
 ] as const;
-type Section = typeof SECTIONS[number]['key'];
+
+type Section = (typeof SECTIONS)[number]['key'];
 
 const ACCENT_PRESETS = [
   { label: 'Amber (Default)', value: '#c9a96e' },
@@ -387,7 +388,7 @@ export default function SettingsPage() {
                 onMouseEnter={(e) => { if (section !== s.key) e.currentTarget.style.background = 'var(--bg3)'; }}
                 onMouseLeave={(e) => { if (section !== s.key) e.currentTarget.style.background = 'transparent'; }}
               >
-                <span style={{ fontSize: '16px' }}>{s.icon}</span>
+                <span style={{ fontSize: '16px' }}><i className={s.icon}></i></span>
                 {s.label}
               </button>
             ))}

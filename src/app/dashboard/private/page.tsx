@@ -29,10 +29,10 @@ interface DocVault {
 }
 
 const SECTIONS = [
-  { key: 'passwords',  label: 'Passwords',  icon: '🔐' },
-  { key: 'education',  label: 'Education',  icon: '🎓' },
-  { key: 'personal',   label: 'Identity',   icon: '🪪' },
-  { key: 'documents',  label: 'Documents',  icon: '📁' },
+  { key: 'passwords',  label: 'Passwords',  icon: 'fi fi-rr-lock' },
+  { key: 'education',  label: 'Education',  icon: 'fi fi-rr-graduation-cap' },
+  { key: 'personal',   label: 'Identity',   icon: 'fi fi-rr-id-badge' },
+  { key: 'documents',  label: 'Documents',  icon: 'fi fi-rr-folder' },
 ] as const;
 type Section = typeof SECTIONS[number]['key'];
 
@@ -101,7 +101,7 @@ function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px',
         }}
       >
-        <div style={{ fontSize: '48px' }}>🔐</div>
+        <div style={{ fontSize: '48px' }}><i className="fi fi-rr-shield-lock" style={{ fontSize: '48px' }}></i></div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: 'var(--font-syne)', fontSize: '18px', fontWeight: 700, color: 'var(--text)', marginBottom: '6px' }}>
             Private Vault
@@ -448,7 +448,10 @@ export default function PrivatePage() {
       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', height: '100%' }}>
         <div style={{ background: 'var(--bg2)', borderBottom: '1px solid var(--border)', padding: '10px 16px', display: 'flex', alignItems: 'center', height: 'var(--topbar-height)', flexShrink: 0 }}>
           <div style={{ fontFamily: 'var(--font-syne)', fontSize: '17px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>🔒</span> Private Vault
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+  <i className="fi fi-rr-lock-alt" style={{ fontSize: '17px' }}></i>
+  Private Vault
+</span>
           </div>
         </div>
         <PinLockScreen onUnlock={() => setUnlocked(true)} />
@@ -490,7 +493,7 @@ export default function PrivatePage() {
       <div style={{ display: 'flex', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', flexShrink: 0, overflowX: 'auto' }}>
         {SECTIONS.map((s) => (
           <button key={s.key} onClick={() => { setSection(s.key); setQuery(''); }} style={{ flex: 1, minWidth: '80px', padding: '11px 8px', fontSize: '12px', fontFamily: 'var(--font-syne)', fontWeight: 600, cursor: 'pointer', background: 'transparent', border: 'none', borderBottom: `2px solid ${section === s.key ? 'var(--accent)' : 'transparent'}`, color: section === s.key ? 'var(--accent2)' : 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
-            <span>{s.icon}</span><span>{s.label}</span>
+            <span><i className={s.icon}></i></span><span>{s.label}</span>
           </button>
         ))}
       </div>
@@ -499,7 +502,7 @@ export default function PrivatePage() {
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
         {section === 'passwords' && (
           <div>
-            {loading ? <LoadingState /> : entries.length === 0 ? <EmptyState icon="🔐" title="No entries yet" desc="Store your usernames and passwords securely." /> : (
+            {loading ? <LoadingState /> : entries.length === 0 ? <EmptyState icon="fi fi-rr-lock" title="No entries yet" desc="Store your usernames and passwords securely." /> : (
               <div className="vault-grid">{entries.map((e) => <PasswordCard key={e.id} entry={e} onEdit={openEditVault} onDelete={handleDeleteVault} onEmail={(entry) => { setSelected(entry); setSendEmailOpen(true); }} />)}</div>
             )}
           </div>
@@ -513,7 +516,7 @@ export default function PrivatePage() {
                 {eduPersons.map(p => <PillBtn key={p} active={eduPersonFilter === p} onClick={() => setEduPersonFilter(eduPersonFilter === p ? '' : p)}>{p}</PillBtn>)}
               </div>
             )}
-            {loading ? <LoadingState /> : eduRecords.length === 0 ? <EmptyState icon="🎓" title="No education records" desc="Add certificates, mark sheets, and degrees." /> : (
+            {loading ? <LoadingState /> : eduRecords.length === 0 ? <EmptyState icon="fi fi-rr-graduation-cap" title="No education records" desc="Add certificates, mark sheets, and degrees." /> : (
               <div className="vault-grid">{eduRecords.map((r) => <EduCard key={r.id} record={r} onEdit={openEditEdu} onDelete={handleDeleteEdu} />)}</div>
             )}
           </div>
@@ -527,7 +530,7 @@ export default function PrivatePage() {
                 {personalPersons.map(p => <PillBtn key={p} active={personalPersonFilter === p} onClick={() => setPersonalPersonFilter(personalPersonFilter === p ? '' : p)}>{p}</PillBtn>)}
               </div>
             )}
-            {loading ? <LoadingState /> : personalDocs.length === 0 ? <EmptyState icon="🪪" title="No identity documents" desc="Store Aadhaar, PAN, Passport and more." /> : (
+            {loading ? <LoadingState /> : personalDocs.length === 0 ? <EmptyState icon="fi fi-rr-id-badge" title="No identity documents" desc="Store Aadhaar, PAN, Passport and more." /> : (
               <div className="vault-grid">{personalDocs.map((d) => <PersonalDocCard key={d.id} doc={d} onEdit={openEditPersonal} onDelete={handleDeletePersonal} />)}</div>
             )}
           </div>
@@ -541,7 +544,7 @@ export default function PrivatePage() {
                 {docTags.map(t => <PillBtn key={t!} active={docTagFilter === t} onClick={() => setDocTagFilter(docTagFilter === t ? '' : t!)}>{t}</PillBtn>)}
               </div>
             )}
-            {loading ? <LoadingState /> : docVault.length === 0 ? <EmptyState icon="📁" title="No documents" desc="Upload invoices, certificates, photos, and more." /> : (
+            {loading ? <LoadingState /> : docVault.length === 0 ? <EmptyState icon="fi fi-rr-folder" title="No documents" desc="Upload invoices, certificates, photos, and more." /> : (
               <div className="vault-grid">{docVault.map((d) => <DocVaultCard key={d.id} doc={d} onEdit={openEditDoc} onDelete={handleDeleteDoc} />)}</div>
             )}
           </div>
@@ -570,8 +573,25 @@ export default function PrivatePage() {
 
 // ── Shared helper UI (same as original) ───────────────────────────────────────
 function LoadingState() { return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text3)', fontSize: '13px' }}>Loading…</div>; }
+
 function EmptyState({ icon, title, desc }: { icon: string; title: string; desc: string }) {
-  return <div style={{ padding: '48px 20px', textAlign: 'center', color: 'var(--text3)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}><div style={{ fontSize: '40px', marginBottom: '4px' }}>{icon}</div><div style={{ fontSize: '15px', fontWeight: 600, fontFamily: 'var(--font-syne)', color: 'var(--text2)' }}>{title}</div><div style={{ fontSize: '12.5px' }}>{desc}</div></div>;
+  const isIconClass = icon.startsWith('fi ');  // Flaticon Uicon classes start with "fi "
+  return (
+    <div style={{
+      padding: '48px 20px', textAlign: 'center', color: 'var(--text3)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+    }}>
+      {isIconClass ? (
+        <i className={icon} style={{ fontSize: '40px' }}></i>
+      ) : (
+        <div style={{ fontSize: '40px', marginBottom: '4px' }}>{icon}</div>
+      )}
+      <div style={{ fontSize: '15px', fontWeight: 600, fontFamily: 'var(--font-syne)', color: 'var(--text2)' }}>
+        {title}
+      </div>
+      <div style={{ fontSize: '12.5px' }}>{desc}</div>
+    </div>
+  );
 }
 function PillBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return <button onClick={onClick} style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', fontWeight: 500, border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`, background: active ? 'var(--accent3)' : 'transparent', color: active ? 'var(--accent2)' : 'var(--text2)', transition: 'all 0.15s' }}>{children}</button>;
@@ -609,7 +629,9 @@ function PasswordCard({ entry, onEdit, onDelete, onEmail }: { entry: VaultEntry;
   const [expanded, setExpanded] = useState(false);
   return <CardShell>
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '8px' }}>
-      <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--accent3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>🔐</div>
+      <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--accent3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>
+  <i className="fi fi-rr-lock" style={{ fontSize: '16px' }}></i>
+</div>
       <div style={{ flex: 1 }}>
         <div style={{ fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: '14px', color: 'var(--text)' }}>{entry.name}</div>
         {entry.link && <a href={entry.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: 'var(--accent2)', textDecoration: 'none', display: 'block', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>{entry.link.replace(/^https?:\/\//, '')}</a>}
@@ -635,7 +657,7 @@ function PasswordCard({ entry, onEdit, onDelete, onEmail }: { entry: VaultEntry;
 function EduCard({ record, onEdit, onDelete }: { record: EduRecord; onEdit: (r: EduRecord) => void; onDelete: (id: string) => void }) {
   return <CardShell>
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '10px' }}>
-      <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(34,199,122,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>🎓</div>
+      <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(34,199,122,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}><i className="fi fi-rr-graduation-cap" style={{ fontSize: '18px' }}></i></div>
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
           <span style={{ fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: '14px', color: 'var(--text)' }}>{record.level}</span>
@@ -656,10 +678,20 @@ function EduCard({ record, onEdit, onDelete }: { record: EduRecord; onEdit: (r: 
   </CardShell>;
 }
 function PersonalDocCard({ doc, onEdit, onDelete }: { doc: PersonalDoc; onEdit: (d: PersonalDoc) => void; onDelete: (id: string) => void }) {
-  const icon: Record<string, string> = { 'Aadhaar Card': '🪪', 'PAN Card': '💳', 'Passport': '📕', 'Voter ID': '🗳️', 'Driving License': '🚗', 'Birth Certificate': '📋', 'ABHA ID': '🏥' };
+  const iconClass: Record<string, string> = {
+  'Aadhaar Card': 'fi fi-rr-id-badge',
+  'PAN Card': 'fi fi-rr-credit-card',
+  'Passport': 'fi fi-rr-passport',
+  'Voter ID': 'fi fi-rr-vote-yea',
+  'Driving License': 'fi fi-rr-car',
+  'Birth Certificate': 'fi fi-rr-file-certificate',
+  'ABHA ID': 'fi fi-rr-heart',        // or 'fi fi-rr-stethoscope'
+};
   return <CardShell>
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '10px' }}>
-      <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(77,159,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>{icon[doc.docType] || '📄'}</div>
+     <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(77,159,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
+  <i className={iconClass[doc.docType] || 'fi fi-rr-file'} style={{ fontSize: '18px' }}></i>
+</div>
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
           <span style={{ fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: '14px', color: 'var(--text)' }}>{doc.docType}</span>
@@ -679,10 +711,16 @@ function PersonalDocCard({ doc, onEdit, onDelete }: { doc: PersonalDoc; onEdit: 
   </CardShell>;
 }
 function DocVaultCard({ doc, onEdit, onDelete }: { doc: DocVault; onEdit: (d: DocVault) => void; onDelete: (id: string) => void }) {
-  const typeIcon: Record<string, string> = { image: '🖼️', pdf: '📄', doc: '📝' };
+ const typeIconClass: Record<string, string> = {
+  image: 'fi fi-rr-picture',
+  pdf: 'fi fi-rr-file-pdf',
+  doc: 'fi fi-rr-file-word',
+};
   return <CardShell>
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '8px' }}>
-      <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,181,71,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>{typeIcon[doc.fileType || ''] || '📁'}</div>
+     <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,181,71,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
+  <i className={typeIconClass[doc.fileType || ''] || 'fi fi-rr-folder'} style={{ fontSize: '18px' }}></i>
+</div>
       <div style={{ flex: 1 }}>
         <div style={{ fontFamily: 'var(--font-syne)', fontWeight: 700, fontSize: '14px', color: 'var(--text)', marginBottom: '2px' }}>{doc.name}</div>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
