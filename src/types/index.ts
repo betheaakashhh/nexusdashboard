@@ -25,10 +25,12 @@ export interface Task {
   title: string;
   priority: 'high' | 'med' | 'low';
   due?: string;
+  dueTime?: string;    // HH:MM 24h — triggers email reminder 15 min before
   done: boolean;
+  notified: boolean;   // whether reminder email has been sent
   createdAt: string;
   contactId?: string;
-  contact?: Contact;
+  contact?: Pick<Contact, 'id' | 'name'>;
   userId: string;
 }
 
@@ -106,6 +108,23 @@ export interface DocumentVault {
   userId: string;
 }
 
-export type ContactTag = 'all' | 'personal' | 'family' | 'work' | 'emergency';
-export type SortOption = 'recent' | 'name' | 'added';
-export type EmailTab = 'inbox' | 'sent' | 'starred';
+export interface UserSettings {
+  theme: 'dark' | 'light' | 'system';
+  accentColor: string;
+  compactMode: boolean;
+  defaultLanding: 'contacts' | 'tasks' | 'email' | 'private';
+  defaultView: 'cards' | 'table';
+  sessionTimeout: 0 | 5 | 15 | 30 | 60;
+  defaultSenderName: string;
+  defaultFromEmail: string;
+  emailSignature: string;
+  bccSelf: boolean;
+  quickRecipients: string[];
+  defaultContactSort: 'name' | 'recent' | 'added';
+  contactSearchFields: ('name' | 'phone' | 'email' | 'tags' | 'notes')[];
+  importDuplicateHandling: 'skip' | 'overwrite' | 'merge';
+}
+
+export type ContactTag  = 'all' | 'personal' | 'family' | 'work' | 'emergency';
+export type SortOption  = 'recent' | 'name' | 'added';
+export type EmailTab    = 'inbox' | 'sent' | 'starred';

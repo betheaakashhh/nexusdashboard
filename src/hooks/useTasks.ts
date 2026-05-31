@@ -9,9 +9,9 @@ interface TasksState {
   query: string;
   setQuery: (q: string) => void;
   fetchTasks: (contactId?: string) => Promise<void>;
-  addTask: (data: Partial<Task>) => Promise<Task | null>;
+  addTask: (data: Partial<Task> & { dueTime?: string }) => Promise<Task | null>;
   toggleTask: (id: string, done: boolean) => Promise<void>;
-  updateTask: (id: string, data: Partial<Task>) => Promise<void>;
+  updateTask: (id: string, data: Partial<Task> & { dueTime?: string }) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
 }
 

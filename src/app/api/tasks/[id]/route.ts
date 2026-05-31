@@ -16,10 +16,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const task = await prisma.task.update({
     where: { id },
     data: {
-      title: data.title ?? existing.title,
-      priority: data.priority ?? existing.priority,
-      due: data.due !== undefined ? data.due : existing.due,
-      done: data.done !== undefined ? data.done : existing.done,
+      title:     data.title     ?? existing.title,
+      priority:  data.priority  ?? existing.priority,
+      due:       data.due       !== undefined ? data.due       : existing.due,
+      dueTime:   data.dueTime   !== undefined ? data.dueTime   : existing.dueTime,
+      done:      data.done      !== undefined ? data.done      : existing.done,
+      notified:  data.notified  !== undefined ? data.notified  : existing.notified,
       contactId: data.contactId !== undefined ? data.contactId : existing.contactId,
     },
     include: { contact: { select: { id: true, name: true } } },

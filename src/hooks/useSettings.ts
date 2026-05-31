@@ -1,6 +1,6 @@
 // src/hooks/useSettings.ts
-// Manages app settings: fetches from /api/settings (cookie-backed),
-// applies theme/accent/compact to the DOM, and provides save helpers.
+// Settings are now DB-backed (UserSettings table).
+// applySettingsToDOM is still called client-side for live theme/accent changes.
 
 'use client';
 import { create } from 'zustand';
@@ -40,7 +40,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   importDuplicateHandling: 'skip',
 };
 
-// ── Theme tokens for light mode (overrides globals.css dark defaults) ─────────
+// ── Theme tokens ───────────────────────────────────────────────────────────────
 const LIGHT_TOKENS: Record<string, string> = {
   '--bg':      '#f5f4f0',
   '--bg2':     '#ffffff',
@@ -71,12 +71,11 @@ const DARK_TOKENS: Record<string, string> = {
   '--accent3': '#3a3020',
 };
 
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+function hexToRgb(hex: string) {
   const m = hex.replace('#', '').match(/.{2}/g);
   if (!m || m.length < 3) return null;
   return { r: parseInt(m[0], 16), g: parseInt(m[1], 16), b: parseInt(m[2], 16) };
 }
-
 function lighten(hex: string, amount: number): string {
   const c = hexToRgb(hex);
   if (!c) return hex;
@@ -85,7 +84,6 @@ function lighten(hex: string, amount: number): string {
   const b = Math.min(255, Math.round(c.b + (255 - c.b) * amount));
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
-
 function hexToAlpha(hex: string, alpha: number): string {
   const c = hexToRgb(hex);
   if (!c) return hex;
@@ -96,7 +94,6 @@ export function applySettingsToDOM(settings: AppSettings) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
 
-  // ── Theme ────────────────────────────────────────────────────────────────
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const isDark =
     settings.theme === 'dark' ||
@@ -106,18 +103,13 @@ export function applySettingsToDOM(settings: AppSettings) {
   for (const [k, v] of Object.entries(tokens)) {
     root.style.setProperty(k, v);
   }
-
-  // Mark theme on <html> so CSS can target it if needed
   root.setAttribute('data-theme', isDark ? 'dark' : 'light');
 
-  // ── Accent color ─────────────────────────────────────────────────────────
   const acc = settings.accentColor;
   root.style.setProperty('--accent', acc);
   root.style.setProperty('--accent2', lighten(acc, 0.15));
-  // accent3 = subtle background tint (15% opacity of accent over bg)
   root.style.setProperty('--accent3', hexToAlpha(acc, isDark ? 0.18 : 0.12));
 
-  // ── Compact mode ─────────────────────────────────────────────────────────
   if (settings.compactMode) {
     root.style.setProperty('--topbar-height', '44px');
     root.classList.add('compact');
@@ -134,7 +126,7 @@ interface SettingsStore {
   saving: boolean;
   fetchSettings: () => Promise<void>;
   saveSettings: (patch: Partial<AppSettings>) => Promise<void>;
-  applyNow: (patch: Partial<AppSettings>) => void; // instant preview
+  applyNow: (patch: Partial<AppSettings>) => void;
 }
 
 export const useSettings = create<SettingsStore>((set, get) => ({
@@ -144,14 +136,16 @@ export const useSettings = create<SettingsStore>((set, get) => ({
 
   fetchSettings: async () => {
     try {
-      const res = await fetch('/api/settings');
+      const res = await fetch('/api/settings', { credentials: 'include', cache: 'no-store' });
       if (res.ok) {
         const { settings } = await res.json();
         set({ settings, loaded: true });
         applySettingsToDOM(settings);
+      } else {
+        set({ loaded: true });
+        applySettingsToDOM(DEFAULT_SETTINGS);
       }
     } catch {
-      // fail silently — defaults are fine
       set({ loaded: true });
       applySettingsToDOM(DEFAULT_SETTINGS);
     }
@@ -160,15 +154,20 @@ export const useSettings = create<SettingsStore>((set, get) => ({
   saveSettings: async (patch) => {
     set({ saving: true });
     const next = { ...get().settings, ...patch };
+    // Apply to DOM immediately for live preview
     set({ settings: next });
     applySettingsToDOM(next);
+
     try {
       const res = await fetch('/api/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(patch),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Save failed');
+      const { settings: saved } = await res.json();
+      set({ settings: saved });
     } catch {
       toast.error('Failed to save settings');
     }

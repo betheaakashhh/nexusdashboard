@@ -8,7 +8,7 @@ import Sidebar from '@/components/layout/Sidebar';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, fetchMe } = useAuth();
-  const { fetchSettings } = useSettings();
+  const { fetchSettings, settings, loaded: settingsLoaded } = useSettings();
   const router = useRouter();
   const fetched = useRef(false);
 
@@ -16,7 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!fetched.current) {
       fetched.current = true;
       fetchMe();
-      fetchSettings(); // load & apply settings on mount
+      fetchSettings();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -31,6 +31,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div style={{ height: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', color: 'var(--text3)', fontSize: '13px' }}>
         <span style={{ width: '18px', height: '18px', border: '2px solid var(--border2)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
         Loading Nexus…
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     );
   }
@@ -40,7 +41,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
       <Sidebar />
-      <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <main
+        className="dashboard-main"
+        style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+      >
         {children}
       </main>
     </div>

@@ -1,5 +1,4 @@
-// prisma/schema.prisma — FULL MERGED SCHEMA
-// Replace your existing schema.prisma with this complete version
+// prisma/schema.prisma — FULL MERGED SCHEMA with UserSettings + Task time
 
 generator client {
   provider = "prisma-client-js"
@@ -27,6 +26,39 @@ model User {
   educationRecords  EducationRecord[]
   personalDocuments PersonalDocument[]
   documentVault     DocumentVault[]
+  settings          UserSettings?
+}
+
+// ── Per-user settings stored in DB (replaces cookie-based settings) ──────────
+model UserSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Appearance
+  theme           String  @default("dark")       // dark | light | system
+  accentColor     String  @default("#c9a96e")
+  compactMode     Boolean @default(false)
+  defaultLanding  String  @default("contacts")   // contacts | tasks | email | private
+  defaultView     String  @default("cards")       // cards | table
+
+  // Session
+  sessionTimeout  Int     @default(0)            // 0 | 5 | 15 | 30 | 60
+
+  // Email preferences
+  defaultSenderName String @default("")
+  defaultFromEmail  String @default("")
+  emailSignature    String @default("") @db.Text
+  bccSelf           Boolean @default(false)
+  quickRecipients   String  @default("[]")       // JSON array stored as string
+
+  // Contact preferences
+  defaultContactSort       String @default("recent")  // name | recent | added
+  contactSearchFields      String @default("[\"name\",\"phone\",\"email\"]") // JSON array
+  importDuplicateHandling  String @default("skip")     // skip | overwrite | merge
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Contact {
@@ -50,8 +82,10 @@ model Task {
   id        String   @id @default(cuid())
   title     String
   priority  String   @default("med") // high | med | low
-  due       String?
+  due       String?                  // date string YYYY-MM-DD
+  dueTime   String?                  // time string HH:MM (24h)
   done      Boolean  @default(false)
+  notified  Boolean  @default(false) // whether reminder email was sent
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -61,6 +95,7 @@ model Task {
   contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([done, dueTime]) // for cron queries
 }
 
 model Email {
@@ -86,11 +121,11 @@ model Email {
 // ── Password / Credential Vault ───────────────────────────────────────────────
 model VaultEntry {
   id                 String   @id @default(cuid())
-  name               String                    // label / owner e.g. "Ranjan", "My Bank"
-  userId_field       String?                   // login username or user ID
-  password           String                    // stored plain (user controls this)
-  registrationNumber String?                   // for educational / govt portals
-  link               String?                   // direct URL to the platform
+  name               String
+  userId_field       String?
+  password           String
+  registrationNumber String?
+  link               String?
   notes              String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -104,17 +139,17 @@ model VaultEntry {
 // ── Education Records ────────────────────────────────────────────────────────
 model EducationRecord {
   id           String   @id @default(cuid())
-  personName   String                         // "Self", "Ranjan", "Mom" — filter tag
-  level        String                         // "10th", "12th", "Graduation", custom
+  personName   String
+  level        String
   institution  String?
-  board        String?                        // CBSE, CGBSE, VTU, etc.
+  board        String?
   year         String?
   percentage   String?
   rollNumber   String?
   notes        String?
-  fileUrl      String?  @db.Text             // base64 or URL (image/pdf)
+  fileUrl      String?  @db.Text
   fileName     String?
-  fileType     String?                        // "image" | "pdf"
+  fileType     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -127,16 +162,16 @@ model EducationRecord {
 // ── Personal Identity Documents ──────────────────────────────────────────────
 model PersonalDocument {
   id           String   @id @default(cuid())
-  personName   String                         // "Self", "Dad", "Ranjan" — filter tag
-  docType      String                         // "Aadhaar Card", "PAN Card", "Passport", custom
+  personName   String
+  docType      String
   docNumber    String?
   issuedBy     String?
   issuedDate   String?
   expiryDate   String?
   notes        String?
-  fileUrl      String?  @db.Text             // base64 or URL
+  fileUrl      String?  @db.Text
   fileName     String?
-  fileType     String?                        // "image" | "pdf"
+  fileType     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -149,14 +184,14 @@ model PersonalDocument {
 // ── General Document Vault ───────────────────────────────────────────────────
 model DocumentVault {
   id          String   @id @default(cuid())
-  name        String                          // document display name
-  tag         String?                         // "invoice", "certificate", "photo", custom
-  idType      String?                         // "Government", "Personal", "Work", custom
+  name        String
+  tag         String?
+  idType      String?
   description String?
-  fileUrl     String?  @db.Text             // base64 or URL
+  fileUrl     String?  @db.Text
   fileName    String?
-  fileType    String?                         // "image" | "pdf" | "doc" | other
-  fileSize    Int?                            // bytes
+  fileType    String?
+  fileSize    Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

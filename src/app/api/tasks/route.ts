@@ -28,13 +28,15 @@ export async function POST(req: NextRequest) {
   const session = getSessionFromRequest(req);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { title, priority, due, contactId } = await req.json();
+  const { title, priority, due, dueTime, contactId } = await req.json();
 
   if (!title) return NextResponse.json({ error: 'Title required' }, { status: 400 });
 
   // Verify contactId belongs to user
   if (contactId) {
-    const contact = await prisma.contact.findFirst({ where: { id: contactId, userId: session.userId } });
+    const contact = await prisma.contact.findFirst({
+      where: { id: contactId, userId: session.userId },
+    });
     if (!contact) return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
   }
 
@@ -43,6 +45,7 @@ export async function POST(req: NextRequest) {
       title,
       priority: priority || 'med',
       due: due || null,
+      dueTime: dueTime || null,
       contactId: contactId || null,
       userId: session.userId,
     },
