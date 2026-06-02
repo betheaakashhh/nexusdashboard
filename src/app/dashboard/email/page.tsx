@@ -243,7 +243,7 @@ export default function EmailPage() {
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
           {/* Tabs */}
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+          <div style={{ display: 'flex', flexShrink: 0 }}>
             {TABS.map((t) => (
               <button key={t.key} onClick={() => setTab(t.key)} style={{
                 flex: 1, padding: '11px', textAlign: 'center', fontSize: '12px', cursor: 'pointer',
