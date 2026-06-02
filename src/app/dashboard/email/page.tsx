@@ -243,13 +243,16 @@ export default function EmailPage() {
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
           {/* Tabs */}
-          <div style={{ display: 'flex', flexShrink: 0 }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border)',flexShrink: 0 }}>
             {TABS.map((t) => (
               <button key={t.key} onClick={() => setTab(t.key)} style={{
                 flex: 1, padding: '11px', textAlign: 'center', fontSize: '12px', cursor: 'pointer',
                 color: tab === t.key ? 'var(--accent2)' : 'var(--text3)',
-                borderBottom: `2px solid ${tab === t.key ? 'var(--accent)' : 'transparent'}`,
-                background: 'transparent', border: 'none',
+                border: 'none',
+                borderBottomWidth: '2px',
+                borderBottomStyle: 'solid',
+                borderBottomColor: tab === t.key ? 'var(--accent)' : 'transparent',
+                background: 'transparent',
                 fontFamily: 'var(--font-syne)', fontWeight: 600, transition: 'all 0.15s',
               }}>{t.label}</button>
             ))}
@@ -266,7 +269,7 @@ export default function EmailPage() {
               </div>
             ) : displayed.map((e) => (
               <motion.div
-                key={e.id}
+                key={e.id || `${e.senderEmail}-${e.createdAt}-${e.subject}`}
                 whileTap={{ scale: 0.99 }}
                 onClick={() => handleSelect(e)}
                 className="email-list-item"
@@ -295,7 +298,7 @@ export default function EmailPage() {
         {/* Desktop detail panel */}
         <AnimatePresence mode="wait">
           {selected ? (
-            <motion.div key={selected.id} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="email-desktop-detail" style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+            <motion.div key={selected.id || `${selected.senderEmail}-${selected.createdAt}-${selected.subject}`} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="email-desktop-detail" style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
               <EmailDetail email={selected} onReply={() => openReply(selected)} onStar={() => toggleStar(selected.id)} onDelete={() => deleteEmail(selected.id)} />
             </motion.div>
           ) : (

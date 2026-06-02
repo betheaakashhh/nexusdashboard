@@ -1,5 +1,5 @@
-// src/middleware.ts
-// IMPORTANT: Middleware runs in the Edge Runtime — no Node.js APIs.
+// src/proxy.ts
+// IMPORTANT: proxy runs in the Edge Runtime — no Node.js APIs.
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -14,7 +14,7 @@ const PUBLIC_PATHS = [
   '/api/auth/setup',
 ];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow static files and Next.js internals

@@ -141,6 +141,7 @@ export const useSettings = create<SettingsStore>((set, get) => ({
         const { settings } = await res.json();
         set({ settings, loaded: true });
         applySettingsToDOM(settings);
+        return;
       } else {
         set({ loaded: true });
         applySettingsToDOM(DEFAULT_SETTINGS);

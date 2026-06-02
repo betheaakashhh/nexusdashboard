@@ -427,9 +427,11 @@ export default function PrivatePage() {
   }
   function openEditDoc(d: DocVault) { setEditDocTarget(d); setDocForm({ name: d.name, tag: d.tag || '', idType: d.idType || '', description: d.description || '' }); setDocFile(null); setEditDocOpen(true); }
 
-  const eduPersons      = [...new Set(eduRecords.map(r => r.personName))];
-  const personalPersons = [...new Set(personalDocs.map(d => d.personName))];
-  const docTags         = [...new Set(docVault.map(d => d.tag).filter(Boolean))];
+  const eduPersons      = [...new Set(eduRecords.map(r => r.personName.trim()).filter(Boolean))];
+  const personalPersons = [...new Set(personalDocs.map(d => d.personName.trim()).filter(Boolean))];
+  const docTags         = [...new Set(docVault.map(d => d.tag?.trim()).filter((tag): tag is string => Boolean(tag)))];
+
+ 
 
   // ── Render PIN check loading ───────────────────────────────────────────────
   if (pinCheckLoading) {
@@ -492,7 +494,7 @@ export default function PrivatePage() {
       {/* Section tabs */}
       <div style={{ display: 'flex', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', flexShrink: 0, overflowX: 'auto' }}>
         {SECTIONS.map((s) => (
-          <button key={s.key} onClick={() => { setSection(s.key); setQuery(''); }} style={{ flex: 1, minWidth: '80px', padding: '11px 8px', fontSize: '12px', fontFamily: 'var(--font-syne)', fontWeight: 600, cursor: 'pointer', background: 'transparent', border: 'none', borderBottom: `2px solid ${section === s.key ? 'var(--accent)' : 'transparent'}`, color: section === s.key ? 'var(--accent2)' : 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+          <button key={s.key} onClick={() => { setSection(s.key); setQuery(''); }} style={{ flex: 1, minWidth: '80px', padding: '11px 8px', fontSize: '12px', fontFamily: 'var(--font-syne)', fontWeight: 600, cursor: 'pointer', background: 'transparent', border: 'none', borderBottomWidth: '2px', borderBottomStyle: 'solid', borderBottomColor: section === s.key ? 'var(--accent)' : 'transparent', color: section === s.key ? 'var(--accent2)' : 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
             <span><i className={s.icon}></i></span><span>{s.label}</span>
           </button>
         ))}
@@ -541,7 +543,7 @@ export default function PrivatePage() {
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
                 <span style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Tag</span>
                 <PillBtn active={!docTagFilter} onClick={() => setDocTagFilter('')}>All</PillBtn>
-                {docTags.map(t => <PillBtn key={t!} active={docTagFilter === t} onClick={() => setDocTagFilter(docTagFilter === t ? '' : t!)}>{t}</PillBtn>)}
+               {docTags.map(t => <PillBtn key={t} active={docTagFilter === t} onClick={() => setDocTagFilter(docTagFilter === t ? '' : t)}>{t}</PillBtn>)}
               </div>
             )}
             {loading ? <LoadingState /> : docVault.length === 0 ? <EmptyState icon="fi fi-rr-folder" title="No documents" desc="Upload invoices, certificates, photos, and more." /> : (

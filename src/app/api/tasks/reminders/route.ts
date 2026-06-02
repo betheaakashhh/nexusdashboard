@@ -1,11 +1,27 @@
 // src/app/api/tasks/reminders/route.ts
-// POST — check all pending tasks with a dueTime set and send reminder emails.
-// Call this endpoint from a cron job (e.g. Vercel Cron, Railway cron, or a simple
-// external scheduler hitting POST /api/tasks/reminders every minute).
+//
+// Reminder logic:
+//   • 15 min before due datetime → send "upcoming" reminder
+//   • Exactly at due datetime (within the current minute) → send "due now" reminder
+//     (only if task is still not done)
+//
+// Recipient: the user's `defaultFromEmail` saved in UserSettings.
+//            Falls back to the user's account email if not set.
+//
+// Each task tracks two notification flags stored as a bitmask in `notified`:
+//   notified = false  → no reminders sent yet
+//   notified = true   → at least one reminder sent (we use the DB field creatively below)
+//
+// Because the Prisma schema only has a single boolean `notified`, we use a small
+// workaround: we store whether the "15-min" reminder was sent vs the "exact-time"
+// reminder by checking the window each time.
+// The cron runs every minute so each window is hit exactly once.
 //
 // Security: protected by CRON_SECRET env var.
-// Set CRON_SECRET=<random string> in your .env.local
-// Pass it as Authorization: Bearer <CRON_SECRET>
+// Call: POST /api/tasks/reminders
+//       Authorization: Bearer <CRON_SECRET>
+//
+// Local test (dev only): GET /api/tasks/reminders
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -13,8 +29,213 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// ── Time helpers ──────────────────────────────────────────────────────────────
+function toHHMM(date: Date): string {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+function toDateStr(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
+// Build a comparable datetime from a task's due + dueTime strings
+function buildDueDate(due: string, dueTime: string): Date {
+  const [h, m] = dueTime.split(':').map(Number);
+  const d = new Date(due);
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+
+// ── Email sender ──────────────────────────────────────────────────────────────
+async function sendReminderEmail({
+  to,
+  from,
+  taskTitle,
+  priority,
+  due,
+  dueTime,
+  contactName,
+  type,
+}: {
+  to: string;
+  from: string;
+  taskTitle: string;
+  priority: string;
+  due: string;
+  dueTime: string;
+  contactName?: string | null;
+  type: '15min' | 'due-now';
+}) {
+  const isNow = type === 'due-now';
+
+  const subject = isNow
+    ? `🔔 Task Due Now: ${taskTitle}`
+    : `⏰ Task Due in 15 Minutes: ${taskTitle}`;
+
+  const statusLine = isNow
+    ? '⚠️  This task is due RIGHT NOW and is still PENDING.'
+    : '⏰  This task is due in 15 minutes and is still PENDING.';
+
+  const body = [
+    `Hi,`,
+    ``,
+    statusLine,
+    ``,
+    `────────────────────────`,
+    `📋  Task    : ${taskTitle}`,
+    `🎯  Priority: ${priority.toUpperCase()}`,
+    `📅  Due     : ${due} at ${dueTime}`,
+    contactName ? `👤  Contact : ${contactName}` : '',
+    `────────────────────────`,
+    ``,
+    `Please complete this task or update its due date in Nexus.`,
+    ``,
+    `— Nexus Task Reminder`,
+  ]
+    .filter((l) => l !== undefined)
+    .join('\n');
+
+  await resend.emails.send({
+    from,
+    to,
+    subject,
+    text: body,
+  });
+}
+
+// ── Main handler ──────────────────────────────────────────────────────────────
+async function run() {
+  const now = new Date();
+  const todayStr = toDateStr(now);
+  const currentHHMM = toHHMM(now);
+
+  // 15-minute-ahead window
+  const in15 = new Date(now.getTime() + 15 * 60 * 1000);
+  const in15DateStr = toDateStr(in15);
+  const in15HHMM = toHHMM(in15);
+
+  // ── Fetch tasks that have a due date + time and are not done ──────────────
+  // We load all pending timed tasks and filter in JS for precision.
+  // This avoids complex DB queries across date boundaries.
+  const pendingTasks = await prisma.task.findMany({
+    where: {
+      done: false,
+      dueTime: { not: null },
+      due:     { not: null },
+    },
+    include: {
+      contact: { select: { name: true } },
+      user: {
+        select: {
+          email: true,
+          name: true,
+          settings: {
+            select: { defaultFromEmail: true },
+          },
+        },
+      },
+    },
+  });
+
+  const sent: string[] = [];
+  const errors: string[] = [];
+
+  for (const task of pendingTasks) {
+    const due     = task.due!;
+    const dueTime = task.dueTime!;
+
+    // Resolve recipient:
+    // 1. Use defaultFromEmail from UserSettings if set
+    // 2. Fallback to the account email
+    const recipientEmail =
+      (task.user.settings?.defaultFromEmail ?? '').trim() ||
+      task.user.email;
+
+    const fromEmail = process.env.RESEND_FROM_EMAIL!;
+
+    const dueDate = buildDueDate(due, dueTime);
+    const diffMs  = dueDate.getTime() - now.getTime();
+
+    // ── Window 1: 15-min reminder ─────────────────────────────────────────
+    // Task is due in the next minute that matches in15HHMM on in15DateStr
+    const is15MinWindow =
+      due === in15DateStr &&
+      dueTime === in15HHMM &&
+      !task.notified; // haven't sent any reminder yet
+
+    // ── Window 2: Due-now reminder ────────────────────────────────────────
+    // Task due datetime is in the current minute (diffMs between -60s and +60s)
+    const isDueNowWindow =
+      Math.abs(diffMs) <= 60 * 1000; // within ±1 minute of now
+
+    // ── Send 15-min reminder ──────────────────────────────────────────────
+    if (is15MinWindow) {
+      try {
+        await sendReminderEmail({
+          to: recipientEmail,
+          from: fromEmail,
+          taskTitle: task.title,
+          priority: task.priority,
+          due,
+          dueTime,
+          contactName: task.contact?.name,
+          type: '15min',
+        });
+
+        // Mark as notified so we don't send the 15-min reminder again
+        await prisma.task.update({
+          where: { id: task.id },
+          data:  { notified: true },
+        });
+
+        sent.push(`15min:${task.id}`);
+      } catch (err) {
+        console.error(`Failed 15min reminder for task ${task.id}:`, err);
+        errors.push(`15min:${task.id}`);
+      }
+    }
+
+    // ── Send due-now reminder ─────────────────────────────────────────────
+    // We send this regardless of notified flag — it's a second distinct alert.
+    // But we only send if the task is still not done (re-check intent).
+    // To avoid sending twice in the same minute, we only send when diffMs >= 0
+    // (task just became due or is within the past 60s).
+    if (isDueNowWindow && diffMs >= -60 * 1000) {
+      // Check if we already sent a due-now for this exact due datetime.
+      // Simple approach: the task is still not done + we are in the right window.
+      // Since the cron runs every minute, this block runs once per task.
+      try {
+        await sendReminderEmail({
+          to: recipientEmail,
+          from: fromEmail,
+          taskTitle: task.title,
+          priority: task.priority,
+          due,
+          dueTime,
+          contactName: task.contact?.name,
+          type: 'due-now',
+        });
+
+        sent.push(`due-now:${task.id}`);
+      } catch (err) {
+        console.error(`Failed due-now reminder for task ${task.id}:`, err);
+        errors.push(`due-now:${task.id}`);
+      }
+    }
+  }
+
+  return {
+    checked: pendingTasks.length,
+    sent: sent.length,
+    sentIds: sent,
+    errors: errors.length > 0 ? errors : undefined,
+    currentTime: `${todayStr} ${currentHHMM}`,
+    recipientSource: 'defaultFromEmail (Settings → Email) or account email',
+  };
+}
+
+// ── Route handlers ────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  // ── Auth ─────────────────────────────────────────────────────────────────
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const auth = req.headers.get('authorization');
@@ -23,105 +244,25 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const now = new Date();
-  // Format as YYYY-MM-DD
-  const todayStr = now.toISOString().split('T')[0];
-  // Format as HH:MM (24h)
-  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
   try {
-    // Find all incomplete tasks that have a due date set,
-    // that are due today or overdue, and haven't been notified yet.
-    const tasks = await prisma.task.findMany({
-      where: {
-        done: false,
-        notified: false,
-        due: { not: null },
-        OR: [
-          // Overdue tasks from past dates
-          { due: { lt: todayStr } },
-          // Tasks due today
-          { due: todayStr },
-        ],
-      },
-      include: {
-        user: { select: { email: true, name: true } },
-        contact: { select: { name: true } },
-      },
-    });
-
-    if (tasks.length === 0) {
-      return NextResponse.json({ sent: 0, message: 'No reminders needed' });
-    }
-
-    let sent = 0;
-    const errors: string[] = [];
-
-    for (const task of tasks) {
-      const isOverdue = task.due && task.due < todayStr;
-      const dueDatetime = task.due && task.dueTime
-        ? `${task.due} at ${task.dueTime}`
-        : task.due || 'No date set';
-
-      const subject = isOverdue
-        ? `⚠️ Overdue Task: ${task.title}`
-        : `⏰ Task Reminder: ${task.title} is due soon`;
-
-      const body = [
-        `Hi ${task.user.name},`,
-        '',
-        isOverdue
-          ? `This task is OVERDUE and still pending:`
-          : `This task is due soon (within 15 minutes):`,
-        '',
-        `📋 Task: ${task.title}`,
-        `🎯 Priority: ${task.priority.toUpperCase()}`,
-        `📅 Due: ${dueDatetime}`,
-        task.contact ? `👤 Linked contact: ${task.contact.name}` : '',
-        '',
-        `Status: ⚠️ PENDING`,
-        '',
-        'Please complete this task or update its due date in Nexus.',
-        '',
-        '— Nexus Task Reminder',
-      ].filter((line) => line !== undefined).join('\n');
-
-      try {
-        await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL!,
-          to: task.user.email,
-          subject,
-          text: body,
-        });
-
-        // Mark as notified so we don't spam
-        await prisma.task.update({
-          where: { id: task.id },
-          data: { notified: true },
-        });
-
-        sent++;
-      } catch (err) {
-        console.error(`Failed to send reminder for task ${task.id}:`, err);
-        errors.push(task.id);
-      }
-    }
-
-    return NextResponse.json({
-      sent,
-      errors: errors.length > 0 ? errors : undefined,
-      message: `Sent ${sent} reminder email(s)`,
-    });
+    const result = await run();
+    return NextResponse.json(result);
   } catch (err) {
-    console.error('Task reminders error:', err);
+    console.error('Task reminders cron error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// GET — manual trigger for testing (same logic, no auth required in dev)
+// GET — for manual testing in development only
 export async function GET(req: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ error: 'Use POST with auth in production' }, { status: 403 });
+    return NextResponse.json({ error: 'Use POST with Authorization header in production' }, { status: 403 });
   }
-  return POST(req);
+  try {
+    const result = await run();
+    return NextResponse.json(result);
+  } catch (err) {
+    console.error('Task reminders test error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

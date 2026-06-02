@@ -625,29 +625,70 @@ export default function SettingsPage() {
               {/* ── EMAIL ── */}
               {section === 'email' && (
                 <div style={{ maxWidth: '560px' }}>
-                  <SectionTitle>Sender Identity</SectionTitle>
 
-                  {/* LocalTextField prevents the juggling bug — only saves on blur */}
+                  <SectionTitle>Sender Identity</SectionTitle>
                   <LocalTextField
                     label="Default sender name"
                     value={settings.defaultSenderName}
                     onSave={(v) => save({ defaultSenderName: v })}
                     placeholder="Your Name"
                   />
+
+                  {/* This email also doubles as the task reminder recipient */}
                   <LocalTextField
-                    label="Default from email"
+                    label="Your email address"
                     type="email"
                     value={settings.defaultFromEmail}
                     onSave={(v) => save({ defaultFromEmail: v })}
                     placeholder="you@yourdomain.com"
                   />
 
-                  <div style={{ marginTop: '8px' }}>
-                    <SectionTitle>Compose Options</SectionTitle>
-                    <SettingRow label="BCC self" description="Always BCC yourself on sent emails">
-                      <Toggle checked={settings.bccSelf} onChange={(v) => save({ bccSelf: v })} />
-                    </SettingRow>
+                  {/* Reminder recipient info box */}
+                  <div style={{
+                    marginTop: '2px', marginBottom: '20px',
+                    padding: '12px 14px', borderRadius: 'var(--r2)',
+                    background: settings.defaultFromEmail
+                      ? 'rgba(77,184,138,0.08)'
+                      : 'rgba(232,154,69,0.08)',
+                    border: `1px solid ${settings.defaultFromEmail
+                      ? 'rgba(77,184,138,0.3)'
+                      : 'rgba(232,154,69,0.3)'}`,
+                    display: 'flex', gap: '10px', alignItems: 'flex-start',
+                  }}>
+                    <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>
+                      {settings.defaultFromEmail ? '🔔' : '⚠️'}
+                    </span>
+                    <div>
+                      <div style={{
+                        fontSize: '12.5px', fontWeight: 600,
+                        color: settings.defaultFromEmail ? 'var(--green)' : 'var(--amber)',
+                        marginBottom: '4px', fontFamily: 'var(--font-syne)',
+                      }}>
+                        Task Reminder Recipient
+                      </div>
+                      {settings.defaultFromEmail ? (
+                        <div style={{ fontSize: '12px', color: 'var(--text2)', lineHeight: 1.6 }}>
+                          Task reminder emails will be sent to{' '}
+                          <strong style={{ color: 'var(--text)', fontFamily: 'monospace' }}>
+                            {settings.defaultFromEmail}
+                          </strong>
+                          .<br />
+                          Two reminders are sent per task: one <strong>15 minutes before</strong> and
+                          one <strong>at the exact due time</strong> — only if the task is still pending.
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '12px', color: 'var(--text2)', lineHeight: 1.6 }}>
+                          Set your email address above to receive task reminder notifications.
+                          Without it, reminders fall back to your account login email.
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  <SectionTitle>Compose Options</SectionTitle>
+                  <SettingRow label="BCC self" description="Always BCC yourself on sent emails">
+                    <Toggle checked={settings.bccSelf} onChange={(v) => save({ bccSelf: v })} />
+                  </SettingRow>
 
                   <div style={{ marginTop: '20px' }}>
                     <SectionTitle>Email Signature</SectionTitle>

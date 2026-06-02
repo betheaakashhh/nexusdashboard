@@ -260,18 +260,26 @@ export default function TasksPage() {
         )}
 
         {/* Reminder info banner */}
-        <div style={{ marginTop: 24, padding: '14px 16px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--r2)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ marginTop: 24, padding: '14px 16px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--r2)', display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '20px', flexShrink: 0 }}>🔔</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text)', marginBottom: 2, fontFamily: 'var(--font-syne)' }}>
-              ⏰ Task Reminders
+            <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text)', marginBottom: 4, fontFamily: 'var(--font-syne)' }}>
+              Task Reminder Emails
             </div>
-            <div style={{ fontSize: '11.5px', color: 'var(--text3)' }}>
-              Tasks with a due date + time will send you an email reminder 15 minutes before they're due.
-              Set up your cron job to hit <code style={{ fontFamily: 'monospace', background: 'var(--bg4)', padding: '1px 5px', borderRadius: 3, fontSize: '11px' }}>POST /api/tasks/reminders</code> every minute.
+            <div style={{ fontSize: '11.5px', color: 'var(--text3)', lineHeight: 1.7 }}>
+              When you set a <strong style={{ color: 'var(--text2)' }}>due date + time</strong> on a task, two reminder emails are sent to your email address (<strong style={{ color: 'var(--text2)' }}>Settings → Email → Your email address</strong>):<br />
+              &nbsp;&nbsp;• <strong style={{ color: 'var(--text2)' }}>15 minutes before</strong> — early warning<br />
+              &nbsp;&nbsp;• <strong style={{ color: 'var(--text2)' }}>At the exact due time</strong> — final alert<br />
+              Both only fire if the task is still <strong style={{ color: 'var(--amber)' }}>pending</strong>.
+              Requires the cron job running at{' '}
+              <code style={{ fontFamily: 'monospace', background: 'var(--bg4)', padding: '1px 5px', borderRadius: 3, fontSize: '11px' }}>
+                POST /api/tasks/reminders
+              </code>{' '}
+              every minute.
             </div>
           </div>
           {process.env.NODE_ENV !== 'production' && (
-            <Btn size="sm" variant="ghost" onClick={sendTestReminder}>
+            <Btn size="sm" variant="ghost" onClick={sendTestReminder} style={{ flexShrink: 0 }}>
               Test now
             </Btn>
           )}
