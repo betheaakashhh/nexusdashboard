@@ -410,14 +410,33 @@ export default function SettingsPage() {
         )}
       </div>
 
+      {/* ── Mobile horizontal tab bar — sits between topbar and content, only visible on mobile ── */}
+      <div className="settings-mobile-tabs" style={{ display: 'none' }}>
+        {SECTIONS.map((s) => (
+          <button key={s.key} onClick={() => setSection(s.key)} style={{
+            flex: '0 0 auto', padding: '10px 16px', border: 'none', cursor: 'pointer',
+            background: 'transparent', fontFamily: 'var(--font-syne)', fontWeight: 600, fontSize: '11px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
+            color: section === s.key ? 'var(--accent2)' : 'var(--text3)',
+            borderBottom: `2px solid ${section === s.key ? 'var(--accent)' : 'transparent'}`,
+            transition: 'all 0.15s', whiteSpace: 'nowrap',
+          }}>
+            <span style={{ fontSize: '18px' }}>{s.icon}</span>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
         {/* ── Desktop left sidebar ── */}
         <div className="settings-sidenav" style={{
           width: '200px', minWidth: '200px', background: 'var(--bg2)',
-          borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column',
+          overflow: 'hidden', flexShrink: 0,
         }}>
-          <div style={{ padding: '12px 10px', flex: 1, overflowY: 'auto' }}>
+          {/* Nav buttons fill available space; Sign Out is pinned to bottom */}
+          <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
             {SECTIONS.map((s) => (
               <button key={s.key} onClick={() => setSection(s.key)} style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
@@ -426,6 +445,7 @@ export default function SettingsPage() {
                 background: section === s.key ? 'var(--accent3)' : 'transparent',
                 color: section === s.key ? 'var(--accent2)' : 'var(--text2)',
                 fontFamily: 'var(--font-syne)', fontWeight: 600, fontSize: '13px', transition: 'all 0.15s',
+                flexShrink: 0,
               }}
                 onMouseEnter={(e) => { if (section !== s.key) e.currentTarget.style.background = 'var(--bg3)'; }}
                 onMouseLeave={(e) => { if (section !== s.key) e.currentTarget.style.background = 'transparent'; }}
@@ -434,8 +454,9 @@ export default function SettingsPage() {
                 {s.label}
               </button>
             ))}
-          </div>
-          <div style={{ padding: '12px 10px', borderTop: '1px solid var(--border)' }}>
+          </nav>
+          {/* Sign Out — always pinned flush to the bottom, no gap */}
+          <div style={{ padding: '12px 10px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
             <button onClick={() => setLogoutConfirm(true)} style={{
               width: '100%', padding: '9px 10px', borderRadius: 'var(--r2)',
               border: '1px solid var(--border)', background: 'transparent',
@@ -453,31 +474,14 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* ── Mobile horizontal tab bar — hidden on desktop, shown on mobile ── */}
-        <div className="settings-mobile-tabs" style={{ display: 'none' }}>
-          {SECTIONS.map((s) => (
-            <button key={s.key} onClick={() => setSection(s.key)} style={{
-              flex: '0 0 auto', padding: '10px 14px', border: 'none', cursor: 'pointer',
-              background: 'transparent', fontFamily: 'var(--font-syne)', fontWeight: 600, fontSize: '11px',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
-              color: section === s.key ? 'var(--accent2)' : 'var(--text3)',
-              borderBottom: `2px solid ${section === s.key ? 'var(--accent)' : 'transparent'}`,
-              transition: 'all 0.15s', whiteSpace: 'nowrap',
-            }}>
-              <span style={{ fontSize: '18px' }}>{s.icon}</span>
-              {s.label}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Main content ── */}
-        <div className="settings-content" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+        {/* ── Main content — uses ALL remaining width ── */}
+        <div className="settings-content" style={{ flex: 1, overflowY: 'auto', padding: '28px 36px', minWidth: 0 }}>
           <AnimatePresence mode="wait">
             <motion.div key={section} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
 
               {/* ── APPEARANCE ── */}
               {section === 'appearance' && (
-                <div style={{ maxWidth: '580px' }}>
+                <div style={{ maxWidth: '860px' }}>
                   <SectionTitle>Theme</SectionTitle>
                   <SettingRow label="Color scheme" description="Saved to your account — applies on every device.">
                     <PillGroup
@@ -546,7 +550,7 @@ export default function SettingsPage() {
 
               {/* ── SECURITY ── */}
               {section === 'security' && (
-                <div style={{ maxWidth: '560px' }}>
+                <div style={{ maxWidth: '860px' }}>
                   <SectionTitle>Account</SectionTitle>
                   <SettingRow label="Change password" description="Update your login password">
                     <Btn size="sm" variant="ghost" onClick={() => setPwdOpen(true)}>Change</Btn>
@@ -624,7 +628,7 @@ export default function SettingsPage() {
 
               {/* ── EMAIL ── */}
               {section === 'email' && (
-                <div style={{ maxWidth: '560px' }}>
+                <div style={{ maxWidth: '860px' }}>
 
                   <SectionTitle>Sender Identity</SectionTitle>
                   <LocalTextField
@@ -741,7 +745,7 @@ export default function SettingsPage() {
 
               {/* ── CONTACTS ── */}
               {section === 'contacts' && (
-                <div style={{ maxWidth: '560px' }}>
+                <div style={{ maxWidth: '860px' }}>
                   <SectionTitle>Display</SectionTitle>
                   <SettingRow label="Default sort order" description="How contacts are ordered by default">
                     <PillGroup
@@ -808,7 +812,7 @@ export default function SettingsPage() {
 
               {/* ── DATA ── */}
               {section === 'data' && (
-                <div style={{ maxWidth: '560px' }}>
+                <div style={{ maxWidth: '860px' }}>
                   <SectionTitle>Backup & Export</SectionTitle>
                   <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -914,11 +918,13 @@ export default function SettingsPage() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
 
-        /* Mobile: hide sidebar, show horizontal tab bar */
+        /* Mobile: hide sidebar, show horizontal tab bar.
+           The tab bar is rendered ABOVE the flex row so it spans full width. */
         @media (max-width: 768px) {
           .settings-sidenav { display: none !important; }
           .settings-mobile-tabs {
             display: flex !important;
+            width: 100%;
             background: var(--bg2);
             border-bottom: 1px solid var(--border);
             overflow-x: auto;
@@ -927,7 +933,12 @@ export default function SettingsPage() {
             flex-shrink: 0;
           }
           .settings-mobile-tabs::-webkit-scrollbar { display: none; }
-          .settings-content { padding: 16px !important; }
+          .settings-content { padding: 16px 18px !important; }
+        }
+
+        /* Wide screens — more breathing room */
+        @media (min-width: 1200px) {
+          .settings-content { padding: 36px 52px !important; }
         }
       `}</style>
     </div>
