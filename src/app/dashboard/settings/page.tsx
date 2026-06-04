@@ -620,7 +620,7 @@ export default function SettingsPage() {
                     type="email"
                     value={settings.defaultFromEmail}
                     onSave={(v) => save({ defaultFromEmail: v })}
-                    placeholder="you@yourdomain.com"
+                    placeholder="Enter your email to receive task reminders and set the default From address for outgoing emails"
                   />
                   <div style={{
                     marginTop: '2px', marginBottom: '20px',
@@ -630,7 +630,7 @@ export default function SettingsPage() {
                     display: 'flex', gap: '10px', alignItems: 'flex-start',
                   }}>
                     <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>
-                      {settings.defaultFromEmail ? '🔔' : '⚠️'}
+                      {settings.defaultFromEmail ? <i className="fi fi-rr-bell" aria-hidden="true" /> : <i className="fi fi-rr-info-circle" aria-hidden="true" />}
                     </span>
                     <div>
                       <div style={{
