@@ -366,7 +366,7 @@ export default function ContactsPage() {
 
         {/* Search with keyboard hint */}
         <div className="topbar-search" style={{ position: 'relative', flex: 1, maxWidth: '480px' }}>
-          <i className="ti ti-search" aria-hidden="true" style={{
+          <i className="fi fi-rr-search" aria-hidden="true" style={{
             position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
             color: 'var(--text3)', fontSize: 14, pointerEvents: 'none',
           }} />
@@ -398,7 +398,7 @@ export default function ContactsPage() {
                 color: 'var(--text3)', display: 'flex', alignItems: 'center', padding: 2,
               }}
             >
-              <i className="ti ti-x" style={{ fontSize: 13 }} aria-hidden="true" />
+              <i className="fi fi-rr-x" style={{ fontSize: 13 }} aria-hidden="true" />
             </button>
           )}
         </div>
@@ -428,7 +428,7 @@ export default function ContactsPage() {
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.color = 'var(--text)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text2)'; }}
         >
-          <i className="ti ti-upload" aria-hidden="true" style={{ fontSize: 13 }} />
+          <i className="fi fi-rr-upload" aria-hidden="true" style={{ fontSize: 13 }} />
           Import
           <input type="file" accept=".vcf,.csv" onChange={handleImport} style={{ display: 'none' }} />
         </label>
@@ -446,7 +446,7 @@ export default function ContactsPage() {
             cursor: 'pointer', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}
         >
-          <i className="ti ti-adjustments-horizontal" aria-hidden="true" style={{ fontSize: 16 }} />
+          <i className="fi fi-rr-filter" aria-hidden="true" style={{ fontSize: 16 }} />
         </button>
 
         <button
@@ -462,7 +462,7 @@ export default function ContactsPage() {
           onMouseEnter={(e) => { e.currentTarget.style.background = '#4a3c28'; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = '#3a3020'; }}
         >
-          <i className="ti ti-plus" aria-hidden="true" style={{ fontSize: 13 }} />
+          <i className="fi fi-rr-plus" aria-hidden="true" style={{ fontSize: 13 }} />
           <span className="btn-new-label">New</span>
         </button>
       </div>
@@ -624,12 +624,12 @@ export default function ContactsPage() {
           <div style={{ flex: 1, overflowY: 'auto', padding: '6px' }}>
             {loading ? (
               <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text3)', fontSize: '12px' }}>
-                <i className="ti ti-loader-2" style={{ fontSize: 20, display: 'block', margin: '0 auto 8px', animation: 'spin 0.8s linear infinite' }} aria-hidden="true" />
+                <i className="fi fi-rr-loader" style={{ fontSize: 20, display: 'block', margin: '0 auto 8px', animation: 'spin 0.8s linear infinite' }} aria-hidden="true" />
                 Loading contacts…
               </div>
             ) : displayed.length === 0 ? (
               <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text3)' }}>
-                <i className="ti ti-user-search" style={{ fontSize: 32, display: 'block', margin: '0 auto 10px', opacity: 0.4 }} aria-hidden="true" />
+                <i className="fi fi-rr-user-search" style={{ fontSize: 32, display: 'block', margin: '0 auto 10px', opacity: 0.4 }} aria-hidden="true" />
                 <div style={{ fontSize: '13px', marginBottom: 4 }}>
                   {localQuery ? `No results for "${localQuery}"` : 'No contacts found'}
                 </div>
@@ -703,7 +703,7 @@ export default function ContactsPage() {
                               transform: isActive ? 'rotate(180deg)' : 'none',
                             }}
                           >
-                            <i className="ti ti-chevron-down" style={{ fontSize: 12 }} aria-hidden="true" />
+                            <i className="fi fi-rr-chevron-down" style={{ fontSize: 12 }} aria-hidden="true" />
                           </span>
                         </div>
                       </motion.div>
@@ -777,7 +777,7 @@ export default function ContactsPage() {
                 background: 'var(--bg4)', border: '1px solid var(--border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <i className="ti ti-address-book" style={{ fontSize: 28, color: 'var(--text3)' }} aria-hidden="true" />
+                <i className="fi fi-rr-address-book" style={{ fontSize: 28, color: 'var(--text3)' }} aria-hidden="true" />
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '14px', color: 'var(--text2)', marginBottom: 4 }}>Select a contact</div>
@@ -877,7 +877,7 @@ function MobileInlineDetail({
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#4db88a', textDecoration: 'none',
           }}>
-            <i className="ti ti-phone" aria-hidden="true" style={{ fontSize: 15 }} />
+            <i className="fi fi-rr-phone-call" aria-hidden="true" style={{ fontSize: 15 }} />
           </a>
           <a href={`sms:${contact.phone}`} title="Message" style={{
             width: 36, height: 36, borderRadius: '50%',
@@ -885,7 +885,7 @@ function MobileInlineDetail({
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#6aa3d8', textDecoration: 'none',
           }}>
-            <i className="ti ti-message" aria-hidden="true" style={{ fontSize: 15 }} />
+            <i className="fi fi-rr-envelope" aria-hidden="true" style={{ fontSize: 15 }} />
           </a>
           <button onClick={() => copy(contact.phone, 'phone')} title="Copy number" style={{
             width: 36, height: 36, borderRadius: '50%',
@@ -894,7 +894,7 @@ function MobileInlineDetail({
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: copied === 'phone' ? '#4db88a' : '#c9a96e', cursor: 'pointer',
           }}>
-            <i className={`ti ${copied === 'phone' ? 'ti-check' : 'ti-copy'}`} aria-hidden="true" style={{ fontSize: 14 }} />
+            <i className={`fi ${copied === 'phone' ? 'fi-rr-check' : 'fi-rr-copy'}`} aria-hidden="true" style={{ fontSize: 14 }} />
           </button>
         </div>
       </div>
@@ -902,9 +902,9 @@ function MobileInlineDetail({
       {/* Action strip */}
       <div style={{ display: 'flex' }}>
         {[
-          { label: 'Edit', icon: 'ti-edit', fn: onEdit, danger: false },
-          { label: 'Task', icon: 'ti-checkbox', fn: onTask, danger: false },
-          { label: 'Delete', icon: 'ti-trash', fn: onDelete, danger: true },
+          { label: 'Edit', icon: 'fi-rr-edit', fn: onEdit, danger: false },
+          { label: 'Task', icon: 'fi-rr-checkbox', fn: onTask, danger: false },
+          { label: 'Delete', icon: 'fi-rr-trash', fn: onDelete, danger: true },
         ].map((a, i, arr) => (
           <button key={a.label} onClick={a.fn} style={{
             flex: 1, padding: '10px 0', background: 'none',
@@ -914,7 +914,7 @@ function MobileInlineDetail({
             fontFamily: 'var(--font-syne)', fontWeight: 600,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
           }}>
-            <i className={`ti ${a.icon}`} aria-hidden="true" style={{ fontSize: 13 }} />
+            <i className={`fi ${a.icon}`} aria-hidden="true" style={{ fontSize: 13 }} />
             {a.label}
           </button>
         ))}
@@ -973,7 +973,7 @@ function ContactDetail({
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.color = 'var(--text)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text2)'; }}
             >
-              <i className="ti ti-edit" aria-hidden="true" style={{ fontSize: 13 }} />
+              <i className="fi fi-rr-edit" aria-hidden="true" style={{ fontSize: 13 }} />
               Edit
             </button>
             <button onClick={onDelete} style={{
@@ -986,7 +986,7 @@ function ContactDetail({
               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(224,92,106,0.15)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(224,92,106,0.08)'; }}
             >
-              <i className="ti ti-trash" aria-hidden="true" style={{ fontSize: 13 }} />
+              <i className="fi fi-rr-trash" aria-hidden="true" style={{ fontSize: 13 }} />
               Delete
             </button>
           </div>
@@ -1001,7 +1001,7 @@ function ContactDetail({
             color: '#4db88a', textDecoration: 'none', fontSize: '12px', fontWeight: 600,
             fontFamily: 'var(--font-syne)',
           }}>
-            <i className="ti ti-phone" aria-hidden="true" style={{ fontSize: 14 }} />
+            <i className="fi fi-rr-phone" aria-hidden="true" style={{ fontSize: 14 }} />
             Call
           </a>
           <a href={`sms:${contact.phone}`} style={{
@@ -1011,7 +1011,7 @@ function ContactDetail({
             color: '#6aa3d8', textDecoration: 'none', fontSize: '12px', fontWeight: 600,
             fontFamily: 'var(--font-syne)',
           }}>
-            <i className="ti ti-message" aria-hidden="true" style={{ fontSize: 14 }} />
+            <i className="fi fi-rr-message" aria-hidden="true" style={{ fontSize: 14 }} />
             Message
           </a>
           <button onClick={() => copy(contact.phone, 'phone')} style={{
@@ -1023,7 +1023,7 @@ function ContactDetail({
             fontSize: '12px', fontWeight: 600, fontFamily: 'var(--font-syne)', cursor: 'pointer',
             transition: 'all 0.15s',
           }}>
-            <i className={`ti ${copied === 'phone' ? 'ti-check' : 'ti-copy'}`} aria-hidden="true" style={{ fontSize: 13 }} />
+            <i className={`fi ${copied === 'phone' ? 'fi-rr-check' : 'fi-rr-copy'}`} aria-hidden="true" style={{ fontSize: 13 }} />
             {copied === 'phone' ? 'Copied!' : contact.phone}
           </button>
         </div>
@@ -1039,9 +1039,9 @@ function ContactDetail({
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {[
-            { icon: 'ti-phone',    label: 'Phone', value: contact.phone,        copyKey: 'phone2' },
-            ...(contact.email ? [{ icon: 'ti-mail', label: 'Email', value: contact.email, copyKey: 'email' }] : []),
-            ...(contact.notes ? [{ icon: 'ti-notes', label: 'Notes', value: contact.notes, copyKey: '' }] : []),
+            { icon: 'fi-rr-phone',    label: 'Phone', value: contact.phone,        copyKey: 'phone2' },
+            ...(contact.email ? [{ icon: 'fi-rr-mail', label: 'Email', value: contact.email, copyKey: 'email' }] : []),
+            ...(contact.notes ? [{ icon: 'fi-rr-notes', label: 'Notes', value: contact.notes, copyKey: '' }] : []),
           ].map((row) => (
             <div key={row.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <div style={{
@@ -1050,7 +1050,7 @@ function ContactDetail({
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
               }}>
-                <i className={`ti ${row.icon}`} aria-hidden="true" style={{ fontSize: 14, color: 'var(--text3)' }} />
+                <i className={`fi ${row.icon}`} aria-hidden="true" style={{ fontSize: 14, color: 'var(--text3)' }} />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '10px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 3 }}>{row.label}</div>
@@ -1066,7 +1066,7 @@ function ContactDetail({
                   }}
                   title="Copy"
                 >
-                  <i className={`ti ${copied === row.copyKey ? 'ti-check' : 'ti-copy'}`} aria-hidden="true" style={{ fontSize: 14 }} />
+                  <i className={`fi ${copied === row.copyKey ? 'fi-rr-check' : 'fi-rr-copy'}`} aria-hidden="true" style={{ fontSize: 14 }} />
                 </button>
               )}
             </div>
@@ -1103,7 +1103,7 @@ function ContactDetail({
             onMouseEnter={(e) => { e.currentTarget.style.background = '#4a3c28'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = '#3a3020'; }}
           >
-            <i className="ti ti-plus" aria-hidden="true" style={{ fontSize: 12 }} />
+            <i className="fi fi-rr-plus" aria-hidden="true" style={{ fontSize: 12 }} />
             Add Task
           </button>
         </div>
@@ -1170,7 +1170,7 @@ function TaskRow({
           transition: 'all 0.12s',
         }}
       >
-        {task.done && <i className="ti ti-check" aria-hidden="true" style={{ fontSize: 11, color: '#1a2e22' }} />}
+        {task.done && <i className="fi fi-rr-check" aria-hidden="true" style={{ fontSize: 11, color: '#1a2e22' }} />}
       </motion.div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -1182,7 +1182,7 @@ function TaskRow({
         </div>
         {task.due && (
           <div style={{ fontSize: '11px', color: 'var(--text3)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
-            <i className="ti ti-calendar" aria-hidden="true" style={{ fontSize: 11 }} />
+            <i className="fi fi-rr-calendar" aria-hidden="true" style={{ fontSize: 11 }} />
             {task.due}
           </div>
         )}
@@ -1200,7 +1200,7 @@ function TaskRow({
       </span>
 
       <IconBtn onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} title="Delete task" danger>
-        <i className="ti ti-x" aria-hidden="true" style={{ fontSize: 12 }} />
+        <i className="fi fi-rr-x" aria-hidden="true" style={{ fontSize: 12 }} />
       </IconBtn>
     </div>
   );

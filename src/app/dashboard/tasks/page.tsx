@@ -232,7 +232,7 @@ export default function TasksPage() {
             </div>
             {pending.length === 0 ? (
               <div style={{ color: 'var(--text3)', fontSize: '13px', marginBottom: '20px', padding: '16px', background: 'var(--bg2)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', textAlign: 'center' }}>
-                🎉 All done! Nothing pending.
+                <i className="fi fi-rr-check-circle" /> All done! Nothing pending.
               </div>
             ) : (
               <AnimatePresence>
@@ -261,7 +261,7 @@ export default function TasksPage() {
 
         {/* Reminder info banner */}
         <div style={{ marginTop: 24, padding: '14px 16px', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--r2)', display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '20px', flexShrink: 0 }}>🔔</span>
+          <span style={{ fontSize: '20px', flexShrink: 0 }}><i className="fi fi-rr-bell" /></span>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text)', marginBottom: 4, fontFamily: 'var(--font-syne)' }}>
               Task Reminder Emails

@@ -13,11 +13,11 @@ import Modal from '@/components/ui/Modal';
 import { FormField, Input, Btn } from '@/components/ui/FormField';
 
 const SECTIONS = [
-  { key: 'appearance', label: 'Appearance', icon: '🎨' },
-  { key: 'security',   label: 'Security',   icon: '🔒' },
-  { key: 'email',      label: 'Email',      icon: '✉️'  },
-  { key: 'contacts',   label: 'Contacts',   icon: '👤' },
-  { key: 'data',       label: 'Data',       icon: '💾' },
+  { key: 'appearance', label: 'Appearance', icon: "fi fi-rr-palette" },
+  { key: 'security',   label: 'Security',   icon: "fi fi-rr-lock" },
+  { key: 'email',      label: 'Email',      icon: "fi fi-rr-envelope" },
+  { key: 'contacts',   label: 'Contacts',   icon: "fi fi-rr-user" },
+  { key: 'data',       label: 'Data',       icon: "fi fi-rr-database" },
 ] as const;
 type Section = typeof SECTIONS[number]['key'];
 
@@ -390,7 +390,7 @@ export default function SettingsPage() {
           {/* Active section breadcrumb on desktop */}
           <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text3)', fontSize: '13px', fontWeight: 400 }}>
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 4l4 4-4 4"/></svg>
-            {SECTIONS.find(s => s.key === section)?.icon}{' '}
+            <i className={SECTIONS.find(s => s.key === section)?.icon} />
             {SECTIONS.find(s => s.key === section)?.label}
           </span>
         </div>
@@ -434,7 +434,7 @@ export default function SettingsPage() {
             borderBottom: `2px solid ${section === s.key ? 'var(--accent)' : 'transparent'}`,
             transition: 'all 0.15s', whiteSpace: 'nowrap',
           }}>
-            <span style={{ fontSize: '18px' }}>{s.icon}</span>
+            <span style={{ fontSize: '18px' }}><i className={s.icon} /></span>
             {s.label}
           </button>
         ))}
@@ -556,7 +556,7 @@ export default function SettingsPage() {
                     <SectionTitle>Private Vault PIN</SectionTitle>
                     <div style={{ padding: '16px', background: 'var(--bg3)', borderRadius: 'var(--r)', border: '1px solid var(--border)', marginBottom: '8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                        <div style={{ fontSize: '28px' }}>{!pinCheckDone ? '…' : hasPin ? '🔐' : '🔓'}</div>
+                        <div style={{ fontSize: '28px' }}>{!pinCheckDone ? '…' : hasPin ? <i className="fi fi-rr-lock" /> : <i className="fi fi-rr-unlock" />}</div>
                         <div>
                           <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>
                             {hasPin ? 'Vault PIN is set' : 'No vault PIN set'}
