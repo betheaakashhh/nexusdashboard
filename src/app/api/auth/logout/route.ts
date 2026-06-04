@@ -6,7 +6,10 @@ import { prisma } from '@/lib/prisma';
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req);
   if (session?.sessionId) {
-    await prisma.userSession.updateMany({ where: { id: session.sessionId, userId: session.userId, revoked: null }, data: { revoked: new Date() } });
+     await prisma.userSession.updateMany({
+     where: { id: session.sessionId, userId: session.userId, revokedAt: null },
+     data: { revokedAt: new Date() },
+   });
   }
   const response = NextResponse.json({ success: true });
   response.headers.set('Set-Cookie', clearCookieHeader());

@@ -1,4 +1,5 @@
 // src/app/api/auth/login/route.ts
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { comparePassword, getClientIp, getRequestLocation, parseUserAgent, signToken, setCookieHeader } from '@/lib/auth';
@@ -79,11 +80,16 @@ export async function POST(req: NextRequest) {
         ipAddress: getClientIp(req),
         location: getRequestLocation(req),
         UserAgent: ua,
+        token: randomUUID(), // Store a random token for session management (not used for auth)
         expiresAt,
       },
     });
     // sessionId isn't part of the JWTPayload type; cast to any to include it in the token
-     const token = signToken({ userId: user.id, email: user.email, role: user.role, sessionId: session.id });
+    const token = signToken({ userId: user.id, email: user.email, role: user.role, sessionId: session.id });
+    await prisma.userSession.update({
+    where: { id: session.id },
+     data: { token },
+    });
     const response = NextResponse.json({
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
     });

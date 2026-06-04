@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
 import Sidebar from '@/components/layout/Sidebar';
+import { LargeNumberLike } from 'crypto';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, fetchMe, logout} = useAuth();
   const { fetchSettings, settings, loaded: settingsLoaded }: { fetchSettings: () => void; settings: { sessionTimeout?: number } | null; loaded: boolean } = useSettings();
   const router = useRouter();
   const fetched = useRef(false);
-  const autoLogoutTimer = useRef<Number | null>(null);
+  const autoLogoutTimer = useRef<number | null>(null);
 
   useEffect(() => {
     if (!fetched.current) {
@@ -44,7 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (autoLogoutTimer.current) window.clearTimeout(autoLogoutTimer.current);
       activityEvents.forEach((event) => window.removeEventListener(event, resetTimer));
     };
-  }, [logout, settings.sessionTimeout, settingsLoaded, user]);
+  }, [logout, settings?.sessionTimeout, settingsLoaded, user]);
 
   useEffect(() => {
     if (!loading && !user) {
