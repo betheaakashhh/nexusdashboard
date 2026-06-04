@@ -23,6 +23,9 @@ export interface AppSettings {
   importDuplicateHandling: 'skip' | 'overwrite' | 'merge';
 }
 
+// Exported so Sidebar and other components can import the type
+export type SettingsSection = 'appearance' | 'security' | 'email' | 'contacts' | 'data';
+
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
   accentColor: '#c9a96e',
@@ -124,6 +127,9 @@ interface SettingsStore {
   settings: AppSettings;
   loaded: boolean;
   saving: boolean;
+  // Which settings sub-section is active (controlled by sidebar accordion)
+  activeSection: SettingsSection;
+  setActiveSection: (section: SettingsSection) => void;
   fetchSettings: () => Promise<void>;
   saveSettings: (patch: Partial<AppSettings>) => Promise<void>;
   applyNow: (patch: Partial<AppSettings>) => void;
@@ -133,6 +139,9 @@ export const useSettings = create<SettingsStore>((set, get) => ({
   settings: DEFAULT_SETTINGS,
   loaded: false,
   saving: false,
+  activeSection: 'appearance',
+
+  setActiveSection: (activeSection) => set({ activeSection }),
 
   fetchSettings: async () => {
     try {
@@ -155,7 +164,6 @@ export const useSettings = create<SettingsStore>((set, get) => ({
   saveSettings: async (patch) => {
     set({ saving: true });
     const next = { ...get().settings, ...patch };
-    // Apply to DOM immediately for live preview
     set({ settings: next });
     applySettingsToDOM(next);
 

@@ -1,5 +1,8 @@
 'use client';
 // src/app/dashboard/settings/page.tsx
+// Section switching is now driven by the sidebar accordion (useSettings.activeSection).
+// The desktop left sidenav has been removed — the sidebar handles navigation.
+// The mobile horizontal tab bar is kept so mobile users can still switch sections.
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -122,11 +125,6 @@ function MultiToggle<T extends string>({ options, values, onChange }: {
   );
 }
 
-// ── LocalTextField — local state, only saves to DB on blur ───────────────────
-// This is the core fix for the "character juggling" bug.
-// Previously onChange called saveSettings() which re-fetched from DB
-// and overwrote the input while you were still typing.
-// Now: typing only updates local state. DB save happens on blur (focus leave).
 function LocalTextField({
   label, value, onSave, placeholder, type = 'text',
 }: {
@@ -134,8 +132,6 @@ function LocalTextField({
   placeholder?: string; type?: string;
 }) {
   const [local, setLocal] = useState(value);
-
-  // Sync when the parent value updates (e.g. settings loaded from DB on mount)
   useEffect(() => { setLocal(value); }, [value]);
 
   return (
@@ -151,7 +147,6 @@ function LocalTextField({
   );
 }
 
-// ── LocalTextarea — same pattern ─────────────────────────────────────────────
 function LocalTextarea({
   label, value, onSave, placeholder,
 }: {
@@ -190,12 +185,21 @@ function LocalTextarea({
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function SettingsPage() {
   const { user, logout } = useAuth();
-  const { settings, saveSettings, saving } = useSettings();
 
-  const [section, setSection] = useState<Section>('appearance');
+  // Section is now driven by the global store (sidebar accordion sets it).
+  // We alias activeSection → section and setActiveSection → setSection so all
+  // the content below works without changes.
+  const {
+    settings,
+    saveSettings,
+    saving,
+    activeSection: section,
+    setActiveSection: setSection,
+  } = useSettings();
+
   const [justSaved, setJustSaved] = useState(false);
 
   // Password modal
@@ -315,7 +319,7 @@ export default function SettingsPage() {
     setPinLoading(false);
   }
 
-  // ── Data ─────────────────────────────────────────────────────────────────────
+  // ── Data ──────────────────────────────────────────────────────────────────────
   async function handleExportData() {
     try {
       const [c, t, e] = await Promise.all([
@@ -383,6 +387,12 @@ export default function SettingsPage() {
             <path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41"/>
           </svg>
           Settings
+          {/* Active section breadcrumb on desktop */}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text3)', fontSize: '13px', fontWeight: 400 }}>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 4l4 4-4 4"/></svg>
+            {SECTIONS.find(s => s.key === section)?.icon}{' '}
+            {SECTIONS.find(s => s.key === section)?.label}
+          </span>
         </div>
 
         <AnimatePresence>
@@ -410,10 +420,13 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {/* ── Mobile horizontal tab bar — sits between topbar and content, only visible on mobile ── */}
+      {/*
+        Mobile horizontal tab bar — visible only on mobile (desktop uses sidebar accordion).
+        CSS: display:none by default, overridden to flex on ≤768px.
+      */}
       <div className="settings-mobile-tabs" style={{ display: 'none' }}>
         {SECTIONS.map((s) => (
-          <button key={s.key} onClick={() => setSection(s.key)} style={{
+          <button key={s.key} onClick={() => setSection(s.key as Section)} style={{
             flex: '0 0 auto', padding: '10px 16px', border: 'none', cursor: 'pointer',
             background: 'transparent', fontFamily: 'var(--font-syne)', fontWeight: 600, fontSize: '11px',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
@@ -427,57 +440,23 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-
-        {/* ── Desktop left sidebar ── */}
-        <div className="settings-sidenav" style={{
-          width: '200px', minWidth: '200px', background: 'var(--bg2)',
-          borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column',
-          overflow: 'hidden', flexShrink: 0,
-        }}>
-          {/* Nav buttons fill available space; Sign Out is pinned to bottom */}
-          <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-            {SECTIONS.map((s) => (
-              <button key={s.key} onClick={() => setSection(s.key)} style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '9px 10px', borderRadius: 'var(--r2)', marginBottom: '2px',
-                border: 'none', cursor: 'pointer', textAlign: 'left',
-                background: section === s.key ? 'var(--accent3)' : 'transparent',
-                color: section === s.key ? 'var(--accent2)' : 'var(--text2)',
-                fontFamily: 'var(--font-syne)', fontWeight: 600, fontSize: '13px', transition: 'all 0.15s',
-                flexShrink: 0,
-              }}
-                onMouseEnter={(e) => { if (section !== s.key) e.currentTarget.style.background = 'var(--bg3)'; }}
-                onMouseLeave={(e) => { if (section !== s.key) e.currentTarget.style.background = 'transparent'; }}
-              >
-                <span style={{ fontSize: '16px' }}>{s.icon}</span>
-                {s.label}
-              </button>
-            ))}
-          </nav>
-          {/* Sign Out — always pinned flush to the bottom, no gap */}
-          <div style={{ padding: '12px 10px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-            <button onClick={() => setLogoutConfirm(true)} style={{
-              width: '100%', padding: '9px 10px', borderRadius: 'var(--r2)',
-              border: '1px solid var(--border)', background: 'transparent',
-              color: 'var(--text3)', cursor: 'pointer', fontFamily: 'var(--font-syne)',
-              fontWeight: 600, fontSize: '13px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.15s',
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--red)'; e.currentTarget.style.color = 'var(--red)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text3)'; }}>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M10 12h3a1 1 0 001-1V5a1 1 0 00-1-1h-3M7 9l3-3-3-3M10 6H3"/>
-              </svg>
-              Sign Out
-            </button>
-          </div>
-        </div>
-
-        {/* ── Main content — uses ALL remaining width ── */}
-        <div className="settings-content" style={{ flex: 1, overflowY: 'auto', padding: '28px 36px', minWidth: 0 }}>
+      {/*
+        Main content — takes full width now that the desktop left sidenav is gone.
+        Section switching on desktop is handled by the sidebar accordion.
+      */}
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+        <div
+          className="settings-content"
+          style={{ flex: 1, overflowY: 'auto', padding: '28px 36px', minWidth: 0 }}
+        >
           <AnimatePresence mode="wait">
-            <motion.div key={section} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+            <motion.div
+              key={section}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+            >
 
               {/* ── APPEARANCE ── */}
               {section === 'appearance' && (
@@ -629,7 +608,6 @@ export default function SettingsPage() {
               {/* ── EMAIL ── */}
               {section === 'email' && (
                 <div style={{ maxWidth: '860px' }}>
-
                   <SectionTitle>Sender Identity</SectionTitle>
                   <LocalTextField
                     label="Default sender name"
@@ -637,8 +615,6 @@ export default function SettingsPage() {
                     onSave={(v) => save({ defaultSenderName: v })}
                     placeholder="Your Name"
                   />
-
-                  {/* This email also doubles as the task reminder recipient */}
                   <LocalTextField
                     label="Your email address"
                     type="email"
@@ -646,17 +622,11 @@ export default function SettingsPage() {
                     onSave={(v) => save({ defaultFromEmail: v })}
                     placeholder="you@yourdomain.com"
                   />
-
-                  {/* Reminder recipient info box */}
                   <div style={{
                     marginTop: '2px', marginBottom: '20px',
                     padding: '12px 14px', borderRadius: 'var(--r2)',
-                    background: settings.defaultFromEmail
-                      ? 'rgba(77,184,138,0.08)'
-                      : 'rgba(232,154,69,0.08)',
-                    border: `1px solid ${settings.defaultFromEmail
-                      ? 'rgba(77,184,138,0.3)'
-                      : 'rgba(232,154,69,0.3)'}`,
+                    background: settings.defaultFromEmail ? 'rgba(77,184,138,0.08)' : 'rgba(232,154,69,0.08)',
+                    border: `1px solid ${settings.defaultFromEmail ? 'rgba(77,184,138,0.3)' : 'rgba(232,154,69,0.3)'}`,
                     display: 'flex', gap: '10px', alignItems: 'flex-start',
                   }}>
                     <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>
@@ -675,15 +645,13 @@ export default function SettingsPage() {
                           Task reminder emails will be sent to{' '}
                           <strong style={{ color: 'var(--text)', fontFamily: 'monospace' }}>
                             {settings.defaultFromEmail}
-                          </strong>
-                          .<br />
-                          Two reminders are sent per task: one <strong>15 minutes before</strong> and
-                          one <strong>at the exact due time</strong> — only if the task is still pending.
+                          </strong>.
+                          <br />
+                          Two reminders: <strong>15 minutes before</strong> and <strong>at the exact due time</strong> — only if task is still pending.
                         </div>
                       ) : (
                         <div style={{ fontSize: '12px', color: 'var(--text2)', lineHeight: 1.6 }}>
                           Set your email address above to receive task reminder notifications.
-                          Without it, reminders fall back to your account login email.
                         </div>
                       )}
                     </div>
@@ -918,10 +886,8 @@ export default function SettingsPage() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
 
-        /* Mobile: hide sidebar, show horizontal tab bar.
-           The tab bar is rendered ABOVE the flex row so it spans full width. */
+        /* Mobile: hide sidebar (handled globally), show horizontal tab bar */
         @media (max-width: 768px) {
-          .settings-sidenav { display: none !important; }
           .settings-mobile-tabs {
             display: flex !important;
             width: 100%;

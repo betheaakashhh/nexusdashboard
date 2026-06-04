@@ -36,7 +36,6 @@ function RecipientInput({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
@@ -77,7 +76,6 @@ function RecipientInput({
         )}
       </div>
 
-      {/* Dropdown */}
       <AnimatePresence>
         {open && filtered.length > 0 && (
           <motion.div
@@ -159,7 +157,6 @@ export default function EmailPage() {
 
   function openReply(e: Email) {
     setReplyTo(e);
-    // Append signature if set
     const sig = settings.emailSignature ? `\n\n--\n${settings.emailSignature}` : '';
     setComposeForm({ to: e.senderEmail, subject: `Re: ${e.subject}`, body: sig });
     setComposeOpen(true);
@@ -242,8 +239,12 @@ export default function EmailPage() {
           background: 'var(--bg2)', borderRight: '1px solid var(--border)',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
-          {/* Tabs */}
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--border)',flexShrink: 0 }}>
+          {/*
+            Tab bar:
+            - Hidden on DESKTOP (sidebar accordion handles tab switching)
+            - Shown on MOBILE (only way to switch tabs on small screens)
+          */}
+          <div className="email-tabs-bar" style={{ display: 'flex', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
             {TABS.map((t) => (
               <button key={t.key} onClick={() => setTab(t.key)} style={{
                 flex: 1, padding: '11px', textAlign: 'center', fontSize: '12px', cursor: 'pointer',
@@ -399,6 +400,11 @@ export default function EmailPage() {
       </Modal>
 
       <style>{`
+        /* Desktop: tab bar hidden — sidebar accordion handles switching */
+        @media (min-width: 769px) {
+          .email-tabs-bar { display: none !important; }
+        }
+        /* Mobile: tab bar visible inside the list panel */
         @media (max-width: 768px) {
           .email-list-panel { width: 100% !important; min-width: unset !important; border-right: none !important; }
           .email-desktop-detail { display: none !important; }
