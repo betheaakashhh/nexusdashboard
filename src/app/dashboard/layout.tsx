@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
 import Sidebar from '@/components/layout/Sidebar';
-import { LargeNumberLike } from 'crypto';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, fetchMe, logout} = useAuth();
@@ -13,6 +12,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const fetched = useRef(false);
   const autoLogoutTimer = useRef<number | null>(null);
+  const lastSessionTouch = useRef(0);
 
   useEffect(() => {
     if (!fetched.current) {
@@ -21,6 +21,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       fetchSettings();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+
+  useEffect(() => {
+    if (!user) return;
+
+    const touchSession = () => {
+      const now = Date.now();
+      if (now - lastSessionTouch.current < 60 * 1000) return;
+      lastSessionTouch.current = now;
+      fetchMe();
+    };
+
+    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'visibilitychange'];
+    activityEvents.forEach((event) => window.addEventListener(event, touchSession, { passive: true }));
+
+    return () => {
+      activityEvents.forEach((event) => window.removeEventListener(event, touchSession));
+    };
+  }, [fetchMe, user]);
 
   useEffect(() => {
     const sessionTimeout = settings?.sessionTimeout ?? 0;

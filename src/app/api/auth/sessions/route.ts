@@ -4,15 +4,31 @@ import { prisma } from '@/lib/prisma';
 
 const ACTIVE_WINDOW_MS = 5 * 60 * 1000;
 
+type SessionStatus = 'active' | 'signed_in' | 'logged_out';
+
+function getSessionStatus(lastActive: Date, expiresAt: Date, revokedAt: Date | null, now: number): SessionStatus {
+  if (revokedAt || expiresAt.getTime() <= now) return 'logged_out';
+  return now - lastActive.getTime() <= ACTIVE_WINDOW_MS ? 'active' : 'signed_in';
+}
+
 export async function GET(req: NextRequest) {
   const session = getSessionFromRequest(req);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   if (session.sessionId) {
-    await prisma.userSession.updateMany({
-      where: { id: session.sessionId, userId: session.userId, revokedAt: null },
+    const touch = await prisma.userSession.updateMany({
+      where: {
+        id: session.sessionId,
+        userId: session.userId,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
       data: { lastActive: new Date() },
     });
+
+    if (touch.count === 0) {
+      return NextResponse.json({ error: 'Session expired' }, { status: 401 });
+    }
   }
 
   const sessions = await prisma.userSession.findMany({
@@ -38,7 +54,7 @@ export async function GET(req: NextRequest) {
         expiresAt: s.expiresAt.toISOString(),
         revokedAt: s.revokedAt?.toISOString() ?? null,
         isCurrent: s.id === session.sessionId,
-        status: revoked ? 'logged_out' : now - s.lastActive.getTime() <= ACTIVE_WINDOW_MS ? 'active' : 'inactive',
+        status: getSessionStatus(s.lastActive, s.expiresAt, s.revokedAt, now),
       };
     }),
   });

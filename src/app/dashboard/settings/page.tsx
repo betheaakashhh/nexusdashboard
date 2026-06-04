@@ -41,7 +41,7 @@ type LoginSession = {
   revokedAt: string | null;
   isCurrent: boolean;
 
-  status: "active" | "inactive" | "logged_out";
+  status: "active" | "signed_in" | "logged_out";
 };
 
 const ACCENT_PRESETS = [
@@ -1112,18 +1112,19 @@ export default function SettingsPage() {
                           <div style={{ fontSize: '12px', color: 'var(--text3)', padding: '10px 0' }}>No login activity found yet.</div>
                         )}
                         {sessions.map((s) => {
-                          const statusColor = s.status === 'active' ? 'var(--green)' : s.status === 'inactive' ? 'var(--text3)' : 'var(--red)';
+                          const statusColor = s.status === 'active' ? 'var(--green)' : s.status === 'signed_in' ? 'var(--accent2)' : 'var(--red)';
+                          const statusLabel = s.status === 'active' ? 'Active now' : s.status === 'signed_in' ? 'Signed in' : 'Logged out';
                           return (
                             <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', padding: '12px', borderRadius: 'var(--r2)', background: 'var(--bg2)', border: `1px solid ${s.isCurrent ? 'var(--accent)' : 'var(--border)'}` }}>
                               <div style={{ minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                   <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{s.device} · {s.browser} on {s.os}</span>
                                   {s.isCurrent && <span style={{ fontSize: '10px', color: 'var(--accent2)', background: 'var(--accent3)', borderRadius: '999px', padding: '2px 7px', fontWeight: 700 }}>Current</span>}
-                                  <span style={{ fontSize: '10px', color: statusColor, border: `1px solid ${statusColor}`, borderRadius: '999px', padding: '2px 7px', textTransform: 'capitalize' }}>{s.status.replace('_', ' ')}</span>
+                                  <span style={{ fontSize: '10px', color: statusColor, border: `1px solid ${statusColor}`, borderRadius: '999px', padding: '2px 7px' }}>{statusLabel}</span>
                                 </div>
                                 <div style={{ fontSize: '11.5px', color: 'var(--text3)', marginTop: '5px', lineHeight: 1.6 }}>
                                   <div>Location: {s.location} · IP: {s.ipAddress}</div>
-                                  <div>Last active: {formatSessionTime(s.lastActive)} · Logged in: {formatSessionTime(s.createdAt)}</div>
+                                  <div>Last activity: {formatSessionTime(s.lastActive)} · First login: {formatSessionTime(s.createdAt)}</div>
                                 </div>
                               </div>
                               <Btn
