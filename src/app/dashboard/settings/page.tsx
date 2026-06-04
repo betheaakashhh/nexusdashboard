@@ -1,124 +1,243 @@
-'use client';
+"use client";
 // src/app/dashboard/settings/page.tsx
 // Section switching is now driven by the sidebar accordion (useSettings.activeSection).
 // The desktop left sidenav has been removed — the sidebar handles navigation.
 // The mobile horizontal tab bar is kept so mobile users can still switch sections.
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { useSettings, AppSettings, applySettingsToDOM } from '@/hooks/useSettings';
-import Modal from '@/components/ui/Modal';
-import { FormField, Input, Btn } from '@/components/ui/FormField';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useSettings, AppSettings } from "@/hooks/useSettings";
+import Modal from "@/components/ui/Modal";
+import { FormField, Input, Btn } from "@/components/ui/FormField";
 
 const SECTIONS = [
-  { key: 'appearance', label: 'Appearance', icon: "fi fi-rr-palette" },
-  { key: 'security',   label: 'Security',   icon: "fi fi-rr-lock" },
-  { key: 'email',      label: 'Email',      icon: "fi fi-rr-envelope" },
-  { key: 'contacts',   label: 'Contacts',   icon: "fi fi-rr-user" },
-  { key: 'data',       label: 'Data',       icon: "fi fi-rr-database" },
+  { key: "appearance", label: "Appearance", icon: "fi fi-rr-palette" },
+  { key: "security", label: "Security", icon: "fi fi-rr-lock" },
+  { key: "email", label: "Email", icon: "fi fi-rr-envelope" },
+  { key: "contacts", label: "Contacts", icon: "fi fi-rr-user" },
+  { key: "data", label: "Data", icon: "fi fi-rr-database" },
 ] as const;
-type Section = typeof SECTIONS[number]['key'];
+type Section = (typeof SECTIONS)[number]["key"];
+
+type LoginSession = {
+  id: string;
+
+  device: string;
+
+  browser: string;
+  os: string;
+
+  ipAddress: string;
+
+  location: string;
+
+  createdAt: string;
+
+  lastActive: string;
+  expiresAt: string;
+
+  revokedAt: string | null;
+  isCurrent: boolean;
+
+  status: "active" | "inactive" | "logged_out";
+};
 
 const ACCENT_PRESETS = [
-  { label: 'Amber (Default)', value: '#c9a96e' },
-  { label: 'Violet',  value: '#6c63ff' },
-  { label: 'Rose',    value: '#ff6b9d' },
-  { label: 'Cyan',    value: '#22d3ee' },
-  { label: 'Emerald', value: '#22c77a' },
-  { label: 'Coral',   value: '#ff6b6b' },
-  { label: 'Sky',     value: '#4d9fff' },
-  { label: 'Fuchsia', value: '#c084fc' },
+  { label: "Amber (Default)", value: "#c9a96e" },
+  { label: "Violet", value: "#6c63ff" },
+  { label: "Rose", value: "#ff6b9d" },
+  { label: "Cyan", value: "#22d3ee" },
+  { label: "Emerald", value: "#22c77a" },
+  { label: "Coral", value: "#ff6b6b" },
+  { label: "Sky", value: "#4d9fff" },
+  { label: "Fuchsia", value: "#c084fc" },
 ];
 
 // ── Reusable UI pieces ────────────────────────────────────────────────────────
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{
-      fontFamily: 'var(--font-syne)', fontSize: '10px', fontWeight: 700,
-      textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text3)',
-      marginBottom: '12px', marginTop: '4px',
-    }}>
+    <div
+      style={{
+        fontFamily: "var(--font-syne)",
+        fontSize: "10px",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "1.2px",
+        color: "var(--text3)",
+        marginBottom: "12px",
+        marginTop: "4px",
+      }}
+    >
       {children}
     </div>
   );
 }
 
-function SettingRow({ label, description, children }: {
-  label: string; description?: string; children: React.ReactNode;
+function SettingRow({
+  label,
+  description,
+  children,
+}: {
+  label: string;
+  description?: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      gap: '16px', padding: '14px 0', borderBottom: '1px solid var(--border)',
-    }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "16px",
+        padding: "14px 0",
+        borderBottom: "1px solid var(--border)",
+      }}
+    >
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: '13.5px', fontWeight: 500, color: 'var(--text)' }}>{label}</div>
-        {description && <div style={{ fontSize: '11.5px', color: 'var(--text3)', marginTop: '2px' }}>{description}</div>}
+        <div
+          style={{ fontSize: "13.5px", fontWeight: 500, color: "var(--text)" }}
+        >
+          {label}
+        </div>
+        {description && (
+          <div
+            style={{
+              fontSize: "11.5px",
+              color: "var(--text3)",
+              marginTop: "2px",
+            }}
+          >
+            {description}
+          </div>
+        )}
       </div>
       <div style={{ flexShrink: 0 }}>{children}</div>
     </div>
   );
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <motion.button
       onClick={() => onChange(!checked)}
-      animate={{ background: checked ? 'var(--accent)' : 'var(--bg4)' }}
+      animate={{ background: checked ? "var(--accent)" : "var(--bg4)" }}
       transition={{ duration: 0.2 }}
-      style={{ width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0 }}
+      style={{
+        width: "44px",
+        height: "24px",
+        borderRadius: "12px",
+        border: "none",
+        cursor: "pointer",
+        position: "relative",
+        flexShrink: 0,
+      }}
     >
       <motion.div
         animate={{ x: checked ? 22 : 2 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-        style={{ width: '18px', height: '18px', borderRadius: '50%', background: '#fff', position: 'absolute', top: '3px', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        style={{
+          width: "18px",
+          height: "18px",
+          borderRadius: "50%",
+          background: "#fff",
+          position: "absolute",
+          top: "3px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+        }}
       />
     </motion.button>
   );
 }
 
-function PillGroup<T extends string | number>({ options, value, onChange }: {
-  options: { value: T; label: string }[]; value: T; onChange: (v: T) => void;
+function PillGroup<T extends string | number>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
 }) {
   return (
-    <div style={{
-      display: 'flex', gap: '4px', background: 'var(--bg3)',
-      borderRadius: 'var(--r2)', padding: '3px', border: '1px solid var(--border)', flexWrap: 'wrap',
-    }}>
+    <div
+      style={{
+        display: "flex",
+        gap: "4px",
+        background: "var(--bg3)",
+        borderRadius: "var(--r2)",
+        padding: "3px",
+        border: "1px solid var(--border)",
+        flexWrap: "wrap",
+      }}
+    >
       {options.map((o) => (
-        <button key={String(o.value)} onClick={() => onChange(o.value)} style={{
-          padding: '5px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 500,
-          cursor: 'pointer', border: 'none',
-          background: value === o.value ? 'var(--bg2)' : 'transparent',
-          color: value === o.value ? 'var(--text)' : 'var(--text3)',
-          boxShadow: value === o.value ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
-          transition: 'all 0.15s', fontFamily: 'var(--font-syne)',
-        }}>{o.label}</button>
+        <button
+          key={String(o.value)}
+          onClick={() => onChange(o.value)}
+          style={{
+            padding: "5px 10px",
+            borderRadius: "6px",
+            fontSize: "12px",
+            fontWeight: 500,
+            cursor: "pointer",
+            border: "none",
+            background: value === o.value ? "var(--bg2)" : "transparent",
+            color: value === o.value ? "var(--text)" : "var(--text3)",
+            boxShadow: value === o.value ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
+            transition: "all 0.15s",
+            fontFamily: "var(--font-syne)",
+          }}
+        >
+          {o.label}
+        </button>
       ))}
     </div>
   );
 }
 
-function MultiToggle<T extends string>({ options, values, onChange }: {
-  options: { value: T; label: string }[]; values: T[]; onChange: (v: T[]) => void;
+function MultiToggle<T extends string>({
+  options,
+  values,
+  onChange,
+}: {
+  options: { value: T; label: string }[];
+  values: T[];
+  onChange: (v: T[]) => void;
 }) {
   function toggle(v: T) {
     if (values.includes(v)) onChange(values.filter((x) => x !== v));
     else onChange([...values, v]);
   }
   return (
-    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
       {options.map((o) => {
         const active = values.includes(o.value);
         return (
-          <button key={o.value} onClick={() => toggle(o.value)} style={{
-            padding: '5px 12px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 500, cursor: 'pointer',
-            border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-            background: active ? 'var(--accent3)' : 'transparent',
-            color: active ? 'var(--accent2)' : 'var(--text2)', transition: 'all 0.15s',
-          }}>{o.label}</button>
+          <button
+            key={o.value}
+            onClick={() => toggle(o.value)}
+            style={{
+              padding: "5px 12px",
+              borderRadius: "20px",
+              fontSize: "11.5px",
+              fontWeight: 500,
+              cursor: "pointer",
+              border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+              background: active ? "var(--accent3)" : "transparent",
+              color: active ? "var(--accent2)" : "var(--text2)",
+              transition: "all 0.15s",
+            }}
+          >
+            {o.label}
+          </button>
         );
       })}
     </div>
@@ -126,13 +245,22 @@ function MultiToggle<T extends string>({ options, values, onChange }: {
 }
 
 function LocalTextField({
-  label, value, onSave, placeholder, type = 'text',
+  label,
+  value,
+  onSave,
+  placeholder,
+  type = "text",
 }: {
-  label: string; value: string; onSave: (v: string) => void;
-  placeholder?: string; type?: string;
+  label: string;
+  value: string;
+  onSave: (v: string) => void;
+  placeholder?: string;
+  type?: string;
 }) {
   const [local, setLocal] = useState(value);
-  useEffect(() => { setLocal(value); }, [value]);
+  useEffect(() => {
+    setLocal(value);
+  }, [value]);
 
   return (
     <FormField label={label}>
@@ -140,7 +268,9 @@ function LocalTextField({
         type={type}
         value={local}
         onChange={(e) => setLocal(e.target.value)}
-        onBlur={() => { if (local !== value) onSave(local); }}
+        onBlur={() => {
+          if (local !== value) onSave(local);
+        }}
         placeholder={placeholder}
       />
     </FormField>
@@ -148,37 +278,61 @@ function LocalTextField({
 }
 
 function LocalTextarea({
-  label, value, onSave, placeholder,
+  label,
+  value,
+  onSave,
+  placeholder,
 }: {
-  label: string; value: string; onSave: (v: string) => void; placeholder?: string;
+  label: string;
+  value: string;
+  onSave: (v: string) => void;
+  placeholder?: string;
 }) {
   const [local, setLocal] = useState(value);
-  useEffect(() => { setLocal(value); }, [value]);
+  useEffect(() => {
+    setLocal(value);
+  }, [value]);
 
   return (
-    <div style={{ marginBottom: '14px' }}>
-      <label style={{
-        display: 'block', fontSize: '11px', color: 'var(--text3)',
-        textTransform: 'uppercase', letterSpacing: '0.8px',
-        fontFamily: 'var(--font-syne)', fontWeight: 600, marginBottom: '6px',
-      }}>
+    <div style={{ marginBottom: "14px" }}>
+      <label
+        style={{
+          display: "block",
+          fontSize: "11px",
+          color: "var(--text3)",
+          textTransform: "uppercase",
+          letterSpacing: "0.8px",
+          fontFamily: "var(--font-syne)",
+          fontWeight: 600,
+          marginBottom: "6px",
+        }}
+      >
         {label}
       </label>
       <textarea
         value={local}
         onChange={(e) => setLocal(e.target.value)}
         onBlur={(e) => {
-          e.currentTarget.style.borderColor = 'var(--border)';
+          e.currentTarget.style.borderColor = "var(--border)";
           if (local !== value) onSave(local);
         }}
-        onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = "var(--accent)";
+        }}
         placeholder={placeholder}
         rows={4}
         style={{
-          width: '100%', background: 'var(--bg3)', border: '1px solid var(--border)',
-          borderRadius: 'var(--r2)', padding: '10px 14px', color: 'var(--text)',
-          fontSize: '13px', outline: 'none', resize: 'vertical',
-          fontFamily: 'inherit', transition: 'border-color 0.15s',
+          width: "100%",
+          background: "var(--bg3)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--r2)",
+          padding: "10px 14px",
+          color: "var(--text)",
+          fontSize: "13px",
+          outline: "none",
+          resize: "vertical",
+          fontFamily: "inherit",
+          transition: "border-color 0.15s",
         }}
       />
     </div>
@@ -195,6 +349,7 @@ export default function SettingsPage() {
   const {
     settings,
     saveSettings,
+    applyNow,
     saving,
     activeSection: section,
     setActiveSection: setSection,
@@ -204,7 +359,11 @@ export default function SettingsPage() {
 
   // Password modal
   const [pwdOpen, setPwdOpen] = useState(false);
-  const [pwdForm, setPwdForm] = useState({ current: '', next: '', confirm: '' });
+  const [pwdForm, setPwdForm] = useState({
+    current: "",
+    next: "",
+    confirm: "",
+  });
   const [pwdLoading, setPwdLoading] = useState(false);
 
   // PIN modal
@@ -213,24 +372,39 @@ export default function SettingsPage() {
   const [pinOpen, setPinOpen] = useState(false);
   const [removePin, setRemovePin] = useState(false);
   const [forgotPin, setForgotPin] = useState(false);
-  const [pinForm, setPinForm] = useState({ current: '', pin: '', confirm: '' });
+  const [pinForm, setPinForm] = useState({ current: "", pin: "", confirm: "" });
   const [pinLoading, setPinLoading] = useState(false);
-  const [passwordForPinReset, setPasswordForPinReset] = useState('');
+  const [passwordForPinReset, setPasswordForPinReset] = useState("");
 
   // Quick recipients
   const [recipientOpen, setRecipientOpen] = useState(false);
-  const [newRecipient, setNewRecipient] = useState('');
+  const [newRecipient, setNewRecipient] = useState("");
 
   // Danger zone
-  const [clearModal, setClearModal] = useState<'contacts' | 'tasks' | 'emails' | null>(null);
+  const [clearModal, setClearModal] = useState<
+    "contacts" | "tasks" | "emails" | null
+  >(null);
   const [logoutConfirm, setLogoutConfirm] = useState(false);
+  const [sessions, setSessions] = useState<LoginSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionActionId, setSessionActionId] = useState<string | null>(null);
+
+
 
   useEffect(() => {
-    fetch('/api/settings/pin')
-      .then(r => r.json())
-      .then(d => { setHasPin(d.hasPin); setPinCheckDone(true); })
+    fetch("/api/settings/pin")
+      .then((r) => r.json())
+      .then((d) => {
+        setHasPin(d.hasPin);
+        setPinCheckDone(true);
+      })
       .catch(() => setPinCheckDone(true));
   }, []);
+
+  useEffect(() => {
+    if (section === 'security') loadSessions();
+  }, [section]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   async function save(patch: Partial<AppSettings>) {
     await saveSettings(patch);
@@ -240,82 +414,217 @@ export default function SettingsPage() {
 
   // ── Password ────────────────────────────────────────────────────────────────
   async function handleChangePassword() {
-    if (!pwdForm.current || !pwdForm.next) { toast.error('All fields required'); return; }
-    if (pwdForm.next.length < 8) { toast.error('New password must be ≥ 8 characters'); return; }
-    if (pwdForm.next !== pwdForm.confirm) { toast.error('Passwords do not match'); return; }
+    if (!pwdForm.current || !pwdForm.next) {
+      toast.error("All fields required");
+      return;
+    }
+    if (pwdForm.next.length < 8) {
+      toast.error("New password must be ≥ 8 characters");
+      return;
+    }
+    if (pwdForm.next !== pwdForm.confirm) {
+      toast.error("Passwords do not match");
+      return;
+    }
     setPwdLoading(true);
     try {
-      const res = await fetch('/api/auth/change-password', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword: pwdForm.current, newPassword: pwdForm.next }),
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: pwdForm.current,
+          newPassword: pwdForm.next,
+        }),
       });
       const data = await res.json();
-      if (!res.ok) toast.error(data.error || 'Failed');
-      else { toast.success('Password updated'); setPwdOpen(false); setPwdForm({ current: '', next: '', confirm: '' }); }
-    } catch { toast.error('Something went wrong'); }
+      if (!res.ok) toast.error(data.error || "Failed");
+      else {
+        toast.success("Password updated");
+        setPwdOpen(false);
+        setPwdForm({ current: "", next: "", confirm: "" });
+      }
+    } catch {
+      toast.error("Something went wrong");
+    }
     setPwdLoading(false);
   }
 
   // ── PIN ─────────────────────────────────────────────────────────────────────
   async function handleSetPin() {
-    if (pinForm.pin.length < 4) { toast.error('PIN must be ≥ 4 digits'); return; }
-    if (!/^\d+$/.test(pinForm.pin)) { toast.error('PIN must be digits only'); return; }
-    if (pinForm.pin !== pinForm.confirm) { toast.error('PINs do not match'); return; }
-    if (hasPin && !pinForm.current) { toast.error('Current PIN required'); return; }
+    if (pinForm.pin.length < 4) {
+      toast.error("PIN must be ≥ 4 digits");
+      return;
+    }
+    if (!/^\d+$/.test(pinForm.pin)) {
+      toast.error("PIN must be digits only");
+      return;
+    }
+    if (pinForm.pin !== pinForm.confirm) {
+      toast.error("PINs do not match");
+      return;
+    }
+    if (hasPin && !pinForm.current) {
+      toast.error("Current PIN required");
+      return;
+    }
     setPinLoading(true);
     try {
-      const res = await fetch('/api/settings/pin', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: pinForm.pin, currentPin: hasPin ? pinForm.current : undefined }),
+      const res = await fetch("/api/settings/pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pin: pinForm.pin,
+          currentPin: hasPin ? pinForm.current : undefined,
+        }),
       });
       const data = await res.json();
-      if (!res.ok) toast.error(data.error || 'Failed');
+      if (!res.ok) toast.error(data.error || "Failed");
       else {
-        toast.success(hasPin ? 'PIN updated' : 'Vault PIN set');
-        setHasPin(true); setPinOpen(false); setPinForm({ current: '', pin: '', confirm: '' });
+        toast.success(hasPin ? "PIN updated" : "Vault PIN set");
+        setHasPin(true);
+        setPinOpen(false);
+        setPinForm({ current: "", pin: "", confirm: "" });
       }
-    } catch { toast.error('Something went wrong'); }
+    } catch {
+      toast.error("Something went wrong");
+    }
     setPinLoading(false);
   }
 
+  // ── Login sessions ────────────────────────────────────────────────────────────
+
+  async function loadSessions() {
+
+    setSessionsLoading(true);
+
+    try {
+
+      const res = await fetch('/api/auth/sessions', { credentials: 'include', cache: 'no-store' });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed');
+
+      setSessions(data.sessions || []);
+
+    } catch {
+
+      toast.error('Failed to load login activity');
+
+    }
+    setSessionsLoading(false);
+
+  }
+
+
+  async function revokeSession(id: string, isCurrent: boolean) {
+    setSessionActionId(id);
+
+    try {
+
+      const res = await fetch(`/api/auth/sessions/${id}`, { method: 'DELETE', credentials: 'include' });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+
+      toast.success(isCurrent ? 'Signed out' : 'Device signed out');
+      if (isCurrent) {
+        window.location.href = '/login';
+        return;
+      }
+      await loadSessions();
+    } catch {
+      toast.error('Failed to sign out that device');
+    }
+    setSessionActionId(null);
+  }
+  function formatSessionTime(value: string) {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(value));
+  }
+
+
+
   async function handleRemovePin() {
-    if (!pinForm.current) { toast.error('Current PIN required'); return; }
+    if (!pinForm.current) {
+      toast.error("Current PIN required");
+      return;
+    }
     setPinLoading(true);
     try {
-      const res = await fetch('/api/settings/pin', {
-        method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/settings/pin", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPin: pinForm.current }),
       });
       const data = await res.json();
-      if (!res.ok) toast.error(data.error || 'Failed');
-      else { toast.success('PIN removed'); setHasPin(false); setRemovePin(false); setPinForm({ current: '', pin: '', confirm: '' }); }
-    } catch { toast.error('Something went wrong'); }
+      if (!res.ok) toast.error(data.error || "Failed");
+      else {
+        toast.success("PIN removed");
+        setHasPin(false);
+        setRemovePin(false);
+        setPinForm({ current: "", pin: "", confirm: "" });
+      }
+    } catch {
+      toast.error("Something went wrong");
+    }
     setPinLoading(false);
   }
 
   async function handleForgotPin() {
-    if (!passwordForPinReset || !pinForm.pin) { toast.error('All fields required'); return; }
-    if (pinForm.pin.length < 4) { toast.error('New PIN must be ≥ 4 digits'); return; }
-    if (!/^\d+$/.test(pinForm.pin)) { toast.error('PIN must be digits only'); return; }
-    if (pinForm.pin !== pinForm.confirm) { toast.error('PINs do not match'); return; }
+    if (!passwordForPinReset || !pinForm.pin) {
+      toast.error("All fields required");
+      return;
+    }
+    if (pinForm.pin.length < 4) {
+      toast.error("New PIN must be ≥ 4 digits");
+      return;
+    }
+    if (!/^\d+$/.test(pinForm.pin)) {
+      toast.error("PIN must be digits only");
+      return;
+    }
+    if (pinForm.pin !== pinForm.confirm) {
+      toast.error("PINs do not match");
+      return;
+    }
     setPinLoading(true);
     try {
-      const loginRes = await fetch('/api/auth/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user?.email, password: passwordForPinReset }),
+      const loginRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: user?.email,
+          password: passwordForPinReset,
+        }),
       });
-      if (!loginRes.ok) { toast.error('Account password incorrect'); setPinLoading(false); return; }
-      const res = await fetch('/api/settings/pin/reset', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accountPassword: passwordForPinReset, newPin: pinForm.pin }),
+      if (!loginRes.ok) {
+        toast.error("Account password incorrect");
+        setPinLoading(false);
+        return;
+      }
+      const res = await fetch("/api/settings/pin/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountPassword: passwordForPinReset,
+          newPin: pinForm.pin,
+        }),
       });
       const data = await res.json();
-      if (!res.ok) toast.error(data.error || 'Reset failed');
+      if (!res.ok) toast.error(data.error || "Reset failed");
       else {
-        toast.success('Vault PIN reset'); setHasPin(true); setForgotPin(false);
-        setPinForm({ current: '', pin: '', confirm: '' }); setPasswordForPinReset('');
+        toast.success("Vault PIN reset");
+        setHasPin(true);
+        setForgotPin(false);
+        setPinForm({ current: "", pin: "", confirm: "" });
+        setPasswordForPinReset("");
       }
-    } catch { toast.error('Something went wrong'); }
+    } catch {
+      toast.error("Something went wrong");
+    }
     setPinLoading(false);
   }
 
@@ -323,97 +632,240 @@ export default function SettingsPage() {
   async function handleExportData() {
     try {
       const [c, t, e] = await Promise.all([
-        fetch('/api/contacts').then(r => r.json()),
-        fetch('/api/tasks').then(r => r.json()),
-        fetch('/api/emails').then(r => r.json()),
+        fetch("/api/contacts").then((r) => r.json()),
+        fetch("/api/tasks").then((r) => r.json()),
+        fetch("/api/emails").then((r) => r.json()),
       ]);
       const blob = new Blob(
-        [JSON.stringify({ contacts: c, tasks: t, emails: e, exportedAt: new Date().toISOString() }, null, 2)],
-        { type: 'application/json' }
+        [
+          JSON.stringify(
+            {
+              contacts: c,
+              tasks: t,
+              emails: e,
+              exportedAt: new Date().toISOString(),
+            },
+            null,
+            2,
+          ),
+        ],
+        { type: "application/json" },
       );
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `nexus-backup-${new Date().toISOString().split('T')[0]}.json`; a.click();
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `nexus-backup-${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
       URL.revokeObjectURL(url);
-      toast.success('Data exported');
-    } catch { toast.error('Export failed'); }
+      toast.success("Data exported");
+    } catch {
+      toast.error("Export failed");
+    }
   }
 
-  async function handleExportContacts(format: 'csv' | 'vcf') {
+  async function handleExportContacts(format: "csv" | "vcf") {
     try {
-      const { contacts } = await fetch('/api/contacts').then(r => r.json());
-      let content = '', filename = '';
-      if (format === 'csv') {
-        content = 'Name,Phone,Email,Tag,Notes\n' + contacts.map((c: Record<string, string>) =>
-          `"${c.name}","${c.phone}","${c.email || ''}","${c.tag}","${(c.notes || '').replace(/"/g, '""')}"`
-        ).join('\n');
-        filename = 'contacts.csv';
+      const { contacts } = await fetch("/api/contacts").then((r) => r.json());
+      let content = "",
+        filename = "";
+      if (format === "csv") {
+        content =
+          "Name,Phone,Email,Tag,Notes\n" +
+          contacts
+            .map(
+              (c: Record<string, string>) =>
+                `"${c.name}","${c.phone}","${c.email || ""}","${c.tag}","${(c.notes || "").replace(/"/g, '""')}"`,
+            )
+            .join("\n");
+        filename = "contacts.csv";
       } else {
-        content = contacts.map((c: Record<string, string>) =>
-          `BEGIN:VCARD\nVERSION:3.0\nFN:${c.name}\nTEL:${c.phone}${c.email ? `\nEMAIL:${c.email}` : ''}\nEND:VCARD`
-        ).join('\n');
-        filename = 'contacts.vcf';
+        content = contacts
+          .map(
+            (c: Record<string, string>) =>
+              `BEGIN:VCARD\nVERSION:3.0\nFN:${c.name}\nTEL:${c.phone}${c.email ? `\nEMAIL:${c.email}` : ""}\nEND:VCARD`,
+          )
+          .join("\n");
+        filename = "contacts.vcf";
       }
-      const blob = new Blob([content], { type: 'text/plain' });
+      const blob = new Blob([content], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
       URL.revokeObjectURL(url);
       toast.success(`Contacts exported as ${format.toUpperCase()}`);
-    } catch { toast.error('Export failed'); }
+    } catch {
+      toast.error("Export failed");
+    }
   }
 
-  async function handleClearSection(sec: 'contacts' | 'tasks' | 'emails') {
+  async function handleClearSection(sec: "contacts" | "tasks" | "emails") {
     try {
-      const res = await fetch(`/api/${sec}/clear`, { method: 'DELETE' });
+      const res = await fetch(`/api/${sec}/clear`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       toast.success(`All ${sec} deleted`);
-    } catch { toast.error('Failed to clear data'); }
+    } catch {
+      toast.error("Failed to clear data");
+    }
     setClearModal(null);
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', height: '100%' }}>
-
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        overflow: "hidden",
+        height: "100%",
+      }}
+    >
       {/* Topbar */}
-      <div style={{
-        background: 'var(--bg2)', borderBottom: '1px solid var(--border)',
-        padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '12px',
-        flexShrink: 0, height: 'var(--topbar-height)',
-      }}>
-        <div style={{ fontFamily: 'var(--font-syne)', fontSize: '17px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text)' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41"/>
+      <div
+        style={{
+          background: "var(--bg2)",
+          borderBottom: "1px solid var(--border)",
+          padding: "10px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          flexShrink: 0,
+          height: "var(--topbar-height)",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "var(--font-syne)",
+            fontSize: "17px",
+            fontWeight: 700,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            color: "var(--text)",
+          }}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M4.93 19.07l1.41-1.41M19.07 19.07l-1.41-1.41" />
           </svg>
           Settings
           {/* Active section breadcrumb on desktop */}
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text3)', fontSize: '13px', fontWeight: 400 }}>
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 4l4 4-4 4"/></svg>
-            <i className={SECTIONS.find(s => s.key === section)?.icon} />
-            {SECTIONS.find(s => s.key === section)?.label}
+          <span
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              color: "var(--text3)",
+              fontSize: "13px",
+              fontWeight: 400,
+            }}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <path d="M6 4l4 4-4 4" />
+            </svg>
+            <i className={SECTIONS.find((s) => s.key === section)?.icon} />
+            {SECTIONS.find((s) => s.key === section)?.label}
           </span>
         </div>
 
         <AnimatePresence>
           {(justSaved || saving) && (
-            <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-              style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: saving ? 'var(--text3)' : 'var(--green)' }}>
-              {saving
-                ? <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 0.8s linear infinite' }}><path d="M8 2a6 6 0 100 12A6 6 0 008 2z" opacity=".3"/><path d="M14 8a6 6 0 00-6-6"/></svg>
-                : <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 8l4 4 8-8"/></svg>}
-              {saving ? 'Saving…' : 'Saved'}
+            <motion.div
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                fontSize: "12px",
+                color: saving ? "var(--text3)" : "var(--green)",
+              }}
+            >
+              {saving ? (
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  style={{ animation: "spin 0.8s linear infinite" }}
+                >
+                  <path d="M8 2a6 6 0 100 12A6 6 0 008 2z" opacity=".3" />
+                  <path d="M14 8a6 6 0 00-6-6" />
+                </svg>
+              ) : (
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M2 8l4 4 8-8" />
+                </svg>
+              )}
+              {saving ? "Saving…" : "Saved"}
             </motion.div>
           )}
         </AnimatePresence>
 
         {user && (
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>{user.name}</div>
-              <div style={{ fontSize: '10px', color: 'var(--text3)' }}>{user.email}</div>
+          <div
+            style={{
+              marginLeft: "auto",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <div style={{ textAlign: "right" }}>
+              <div
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "var(--text)",
+                }}
+              >
+                {user.name}
+              </div>
+              <div style={{ fontSize: "10px", color: "var(--text3)" }}>
+                {user.email}
+              </div>
             </div>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: 'var(--accent2)', fontFamily: 'var(--font-syne)' }}>
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "50%",
+                background: "var(--accent3)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "var(--accent2)",
+                fontFamily: "var(--font-syne)",
+              }}
+            >
               {user.name?.[0]?.toUpperCase()}
             </div>
           </div>
@@ -424,17 +876,33 @@ export default function SettingsPage() {
         Mobile horizontal tab bar — visible only on mobile (desktop uses sidebar accordion).
         CSS: display:none by default, overridden to flex on ≤768px.
       */}
-      <div className="settings-mobile-tabs" style={{ display: 'none' }}>
+      <div className="settings-mobile-tabs" style={{ display: "none" }}>
         {SECTIONS.map((s) => (
-          <button key={s.key} onClick={() => setSection(s.key as Section)} style={{
-            flex: '0 0 auto', padding: '10px 16px', border: 'none', cursor: 'pointer',
-            background: 'transparent', fontFamily: 'var(--font-syne)', fontWeight: 600, fontSize: '11px',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
-            color: section === s.key ? 'var(--accent2)' : 'var(--text3)',
-            borderBottom: `2px solid ${section === s.key ? 'var(--accent)' : 'transparent'}`,
-            transition: 'all 0.15s', whiteSpace: 'nowrap',
-          }}>
-            <span style={{ fontSize: '18px' }}><i className={s.icon} /></span>
+          <button
+            key={s.key}
+            onClick={() => setSection(s.key as Section)}
+            style={{
+              flex: "0 0 auto",
+              padding: "10px 16px",
+              border: "none",
+              cursor: "pointer",
+              background: "transparent",
+              fontFamily: "var(--font-syne)",
+              fontWeight: 600,
+              fontSize: "11px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "3px",
+              color: section === s.key ? "var(--accent2)" : "var(--text3)",
+              borderBottom: `2px solid ${section === s.key ? "var(--accent)" : "transparent"}`,
+              transition: "all 0.15s",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span style={{ fontSize: "18px" }}>
+              <i className={s.icon} />
+            </span>
             {s.label}
           </button>
         ))}
@@ -444,10 +912,15 @@ export default function SettingsPage() {
         Main content — takes full width now that the desktop left sidenav is gone.
         Section switching on desktop is handled by the sidebar accordion.
       */}
-      <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+      <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
         <div
           className="settings-content"
-          style={{ flex: 1, overflowY: 'auto', padding: '28px 36px', minWidth: 0 }}
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "28px 36px",
+            minWidth: 0,
+          }}
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -457,67 +930,143 @@ export default function SettingsPage() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
             >
-
               {/* ── APPEARANCE ── */}
-              {section === 'appearance' && (
-                <div style={{ maxWidth: '860px' }}>
+              {section === "appearance" && (
+                <div style={{ maxWidth: "860px" }}>
                   <SectionTitle>Theme</SectionTitle>
-                  <SettingRow label="Color scheme" description="Saved to your account — applies on every device.">
+                  <SettingRow
+                    label="Color scheme"
+                    description="Saved to your account — applies on every device."
+                  >
                     <PillGroup
                       options={[
-                        { value: 'dark' as const,   label: 'Dark'   },
-                        { value: 'light' as const,  label: 'Light'  },
-                        { value: 'system' as const, label: 'System' },
+                        { value: "dark" as const, label: "Dark" },
+                        { value: "light" as const, label: "Light" },
+                        { value: "system" as const, label: "System" },
                       ]}
                       value={settings.theme}
                       onChange={(v) => save({ theme: v })}
                     />
                   </SettingRow>
-                  <SettingRow label="Compact mode" description="Tighter spacing and smaller topbar">
-                    <Toggle checked={settings.compactMode} onChange={(v) => save({ compactMode: v })} />
+                  <SettingRow
+                    label="Compact mode"
+                    description="Tighter spacing and smaller topbar"
+                  >
+                    <Toggle
+                      checked={settings.compactMode}
+                      onChange={(v) => save({ compactMode: v })}
+                    />
                   </SettingRow>
 
-                  <div style={{ marginTop: '24px' }}>
+                  <div style={{ marginTop: "24px" }}>
                     <SectionTitle>Accent Color</SectionTitle>
-                    <p style={{ fontSize: '11.5px', color: 'var(--text3)', marginBottom: '12px' }}>
+                    <p
+                      style={{
+                        fontSize: "11.5px",
+                        color: "var(--text3)",
+                        marginBottom: "12px",
+                      }}
+                    >
                       Changes buttons, highlights, and active states globally.
                     </p>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <div
+                      style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}
+                    >
                       {ACCENT_PRESETS.map((p) => (
-                        <button key={p.value} onClick={() => save({ accentColor: p.value })} title={p.label} style={{
-                          width: '32px', height: '32px', borderRadius: '50%', background: p.value,
-                          border: `3px solid ${settings.accentColor === p.value ? 'var(--text)' : 'transparent'}`,
-                          cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
-                          boxShadow: settings.accentColor === p.value ? `0 0 0 2px var(--bg2), 0 0 0 4px ${p.value}` : 'none',
-                        }} />
+                        <button
+                          key={p.value}
+                          onClick={() => save({ accentColor: p.value })}
+                          title={p.label}
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "50%",
+                            background: p.value,
+                            border: `3px solid ${settings.accentColor === p.value ? "var(--text)" : "transparent"}`,
+                            cursor: "pointer",
+                            transition: "all 0.15s",
+                            flexShrink: 0,
+                            boxShadow:
+                              settings.accentColor === p.value
+                                ? `0 0 0 2px var(--bg2), 0 0 0 4px ${p.value}`
+                                : "none",
+                          }}
+                        />
                       ))}
-                      <label title="Custom color" style={{
-                        width: '32px', height: '32px', borderRadius: '50%',
-                        background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)',
-                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        border: '2px solid var(--border)', overflow: 'hidden', flexShrink: 0,
-                      }}>
-                        <input type="color" value={settings.accentColor}
-                          onChange={(e) => { const next = { ...settings, accentColor: e.target.value }; applySettingsToDOM(next); }}
+                      <label
+                        title="Custom color"
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "50%",
+                          background:
+                            "conic-gradient(red, yellow, lime, cyan, blue, magenta, red)",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "2px solid var(--border)",
+                          overflow: "hidden",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <input
+                          type="color"
+                          value={settings.accentColor}
+                          onChange={(e) =>{
+                          applyNow({ accentColor: e.target.value })}
+                          }
+                          
                           onBlur={(e) => save({ accentColor: e.target.value })}
-                          style={{ width: '200%', height: '200%', opacity: 0, cursor: 'pointer' }} />
+                          style={{
+                            width: "200%",
+                            height: "200%",
+                            opacity: 0,
+                            cursor: "pointer",
+                          }}
+                        />
                       </label>
                     </div>
-                    <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '40px', height: '20px', borderRadius: '4px', background: settings.accentColor }} />
-                      <span style={{ fontSize: '11.5px', color: 'var(--text3)', fontFamily: 'monospace' }}>{settings.accentColor}</span>
+                    <div
+                      style={{
+                        marginTop: "12px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "40px",
+                          height: "20px",
+                          borderRadius: "4px",
+                          background: settings.accentColor,
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: "11.5px",
+                          color: "var(--text3)",
+                          fontFamily: "monospace",
+                        }}
+                      >
+                        {settings.accentColor}
+                      </span>
                     </div>
                   </div>
 
-                  <div style={{ marginTop: '24px' }}>
+                  <div style={{ marginTop: "24px" }}>
                     <SectionTitle>Navigation</SectionTitle>
-                    <SettingRow label="Default landing page" description="Where you land after logging in — saved globally">
+                    <SettingRow
+                      label="Default landing page"
+                      description="Where you land after logging in — saved globally"
+                    >
                       <PillGroup
                         options={[
-                          { value: 'contacts' as const, label: 'Contacts' },
-                          { value: 'tasks' as const,    label: 'Tasks'    },
-                          { value: 'email' as const,    label: 'Email'    },
-                          { value: 'private' as const,  label: 'Vault'    },
+                          { value: "contacts" as const, label: "Contacts" },
+                          { value: "tasks" as const, label: "Tasks" },
+                          { value: "email" as const, label: "Email" },
+                          { value: "private" as const, label: "Vault" },
                         ]}
                         value={settings.defaultLanding}
                         onChange={(v) => save({ defaultLanding: v })}
@@ -528,23 +1077,83 @@ export default function SettingsPage() {
               )}
 
               {/* ── SECURITY ── */}
-              {section === 'security' && (
-                <div style={{ maxWidth: '860px' }}>
+              {section === "security" && (
+                <div style={{ maxWidth: "860px" }}>
                   <SectionTitle>Account</SectionTitle>
-                  <SettingRow label="Change password" description="Update your login password">
-                    <Btn size="sm" variant="ghost" onClick={() => setPwdOpen(true)}>Change</Btn>
+                  <SettingRow
+                    label="Change password"
+                    description="Update your login password"
+                  >
+                    <Btn
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setPwdOpen(true)}
+                    >
+                      Change
+                    </Btn>
                   </SettingRow>
-
+                 {/*─ Login sessions ── */}
                   <div style={{ marginTop: '24px' }}>
+                    <SectionTitle>Login Activity</SectionTitle>
+                    <div style={{ padding: '14px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--r)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                        <div>
+                          <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>Where you are logged in</div>
+                          <div style={{ fontSize: '11.5px', color: 'var(--text3)', marginTop: '2px' }}>Review device, location, and active status. Sign out sessions you do not recognize.</div>
+                        </div>
+                        <Btn size="sm" variant="ghost" onClick={loadSessions} disabled={sessionsLoading}>{sessionsLoading ? 'Refreshing…' : 'Refresh'}</Btn>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {sessionsLoading && sessions.length === 0 && (
+                          <div style={{ fontSize: '12px', color: 'var(--text3)', padding: '10px 0' }}>Loading login activity…</div>
+                        )}
+                        {!sessionsLoading && sessions.length === 0 && (
+                          <div style={{ fontSize: '12px', color: 'var(--text3)', padding: '10px 0' }}>No login activity found yet.</div>
+                        )}
+                        {sessions.map((s) => {
+                          const statusColor = s.status === 'active' ? 'var(--green)' : s.status === 'inactive' ? 'var(--text3)' : 'var(--red)';
+                          return (
+                            <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', padding: '12px', borderRadius: 'var(--r2)', background: 'var(--bg2)', border: `1px solid ${s.isCurrent ? 'var(--accent)' : 'var(--border)'}` }}>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>{s.device} · {s.browser} on {s.os}</span>
+                                  {s.isCurrent && <span style={{ fontSize: '10px', color: 'var(--accent2)', background: 'var(--accent3)', borderRadius: '999px', padding: '2px 7px', fontWeight: 700 }}>Current</span>}
+                                  <span style={{ fontSize: '10px', color: statusColor, border: `1px solid ${statusColor}`, borderRadius: '999px', padding: '2px 7px', textTransform: 'capitalize' }}>{s.status.replace('_', ' ')}</span>
+                                </div>
+                                <div style={{ fontSize: '11.5px', color: 'var(--text3)', marginTop: '5px', lineHeight: 1.6 }}>
+                                  <div>Location: {s.location} · IP: {s.ipAddress}</div>
+                                  <div>Last active: {formatSessionTime(s.lastActive)} · Logged in: {formatSessionTime(s.createdAt)}</div>
+                                </div>
+                              </div>
+                              <Btn
+                                size="sm"
+                                variant={s.isCurrent ? 'danger' : 'ghost'}
+                                onClick={() => revokeSession(s.id, s.isCurrent)}
+                                disabled={Boolean(s.revokedAt) || sessionActionId === s.id}
+                              >
+                                {sessionActionId === s.id ? 'Signing out…' : s.revokedAt ? 'Signed out' : 'Log out'}
+                              </Btn>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: "24px" }}>
                     <SectionTitle>Session</SectionTitle>
-                    <SettingRow label="Auto-logout" description="Sign out after inactivity">
+                    <SettingRow
+                      label="Auto-logout"
+                      description="Sign out after inactivity"
+                    >
                       <PillGroup
                         options={[
-                          { value: 0 as 0,   label: 'Off' },
-                          { value: 5 as 5,   label: '5m'  },
-                          { value: 15 as 15, label: '15m' },
-                          { value: 30 as 30, label: '30m' },
-                          { value: 60 as 60, label: '1hr' },
+                          { value: 0 as 0, label: "Off" },
+                          { value: 5 as 5, label: "5m" },
+                          { value: 15 as 15, label: "15m" },
+                          { value: 30 as 30, label: "30m" },
+                          { value: 60 as 60, label: "1hr" },
                         ]}
                         value={settings.sessionTimeout}
                         onChange={(v) => save({ sessionTimeout: v })}
@@ -552,62 +1161,197 @@ export default function SettingsPage() {
                     </SettingRow>
                   </div>
 
-                  <div style={{ marginTop: '24px' }}>
+                  <div style={{ marginTop: "24px" }}>
                     <SectionTitle>Private Vault PIN</SectionTitle>
-                    <div style={{ padding: '16px', background: 'var(--bg3)', borderRadius: 'var(--r)', border: '1px solid var(--border)', marginBottom: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                        <div style={{ fontSize: '28px' }}>{!pinCheckDone ? '…' : hasPin ? <i className="fi fi-rr-lock" /> : <i className="fi fi-rr-unlock" />}</div>
+                    <div
+                      style={{
+                        padding: "16px",
+                        background: "var(--bg3)",
+                        borderRadius: "var(--r)",
+                        border: "1px solid var(--border)",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          marginBottom: "12px",
+                        }}
+                      >
+                        <div style={{ fontSize: "28px" }}>
+                          {!pinCheckDone ? (
+                            "…"
+                          ) : hasPin ? (
+                            <i className="fi fi-rr-lock" />
+                          ) : (
+                            <i className="fi fi-rr-unlock" />
+                          )}
+                        </div>
                         <div>
-                          <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>
-                            {hasPin ? 'Vault PIN is set' : 'No vault PIN set'}
+                          <div
+                            style={{
+                              fontSize: "13.5px",
+                              fontWeight: 600,
+                              color: "var(--text)",
+                            }}
+                          >
+                            {hasPin ? "Vault PIN is set" : "No vault PIN set"}
                           </div>
-                          <div style={{ fontSize: '11.5px', color: 'var(--text3)', marginTop: '2px' }}>
+                          <div
+                            style={{
+                              fontSize: "11.5px",
+                              color: "var(--text3)",
+                              marginTop: "2px",
+                            }}
+                          >
                             {hasPin
-                              ? 'Your vault requires a PIN. Stored as a bcrypt hash in the database.'
-                              : 'Add a PIN for extra protection before opening Private Vault.'}
+                              ? "Your vault requires a PIN. Stored as a bcrypt hash in the database."
+                              : "Add a PIN for extra protection before opening Private Vault."}
                           </div>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <Btn size="sm" variant="primary" onClick={() => { setPinForm({ current: '', pin: '', confirm: '' }); setPinOpen(true); }}>
-                          {hasPin ? '🔑 Change PIN' : '🔒 Set PIN'}
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <Btn
+                          size="sm"
+                          variant="primary"
+                          onClick={() => {
+                            setPinForm({ current: "", pin: "", confirm: "" });
+                            setPinOpen(true);
+                          }}
+                        >
+                          {hasPin ? "🔑 Change PIN" : "🔒 Set PIN"}
                         </Btn>
                         {hasPin && (
                           <>
-                            <Btn size="sm" variant="danger" onClick={() => { setPinForm({ current: '', pin: '', confirm: '' }); setRemovePin(true); }}>
+                            <Btn
+                              size="sm"
+                              variant="danger"
+                              onClick={() => {
+                                setPinForm({
+                                  current: "",
+                                  pin: "",
+                                  confirm: "",
+                                });
+                                setRemovePin(true);
+                              }}
+                            >
                               Remove PIN
                             </Btn>
-                            <Btn size="sm" variant="ghost" onClick={() => { setPinForm({ current: '', pin: '', confirm: '' }); setPasswordForPinReset(''); setForgotPin(true); }}>
+                            <Btn
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setPinForm({
+                                  current: "",
+                                  pin: "",
+                                  confirm: "",
+                                });
+                                setPasswordForPinReset("");
+                                setForgotPin(true);
+                              }}
+                            >
                               Forgot PIN?
                             </Btn>
                           </>
                         )}
                       </div>
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5h.01"/></svg>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "var(--text3)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      >
+                        <circle cx="8" cy="8" r="6" />
+                        <path d="M8 7v4M8 5h.01" />
+                      </svg>
                       PIN is hashed with bcrypt — never stored in plain text.
                     </div>
                   </div>
 
-                  <div style={{ marginTop: '32px', padding: '16px', borderRadius: 'var(--r)', border: '1px solid rgba(255,77,106,0.2)', background: 'rgba(255,77,106,0.04)' }}>
-                    <div style={{ fontFamily: 'var(--font-syne)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--red)', marginBottom: '12px' }}>
+                  <div
+                    style={{
+                      marginTop: "32px",
+                      padding: "16px",
+                      borderRadius: "var(--r)",
+                      border: "1px solid rgba(255,77,106,0.2)",
+                      background: "rgba(255,77,106,0.04)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontFamily: "var(--font-syne)",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "1px",
+                        color: "var(--red)",
+                        marginBottom: "12px",
+                      }}
+                    >
                       Danger Zone
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "16px",
+                      }}
+                    >
                       <div>
-                        <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text)' }}>Sign out of Nexus</div>
-                        <div style={{ fontSize: '11.5px', color: 'var(--text3)', marginTop: '2px' }}>Clear session and return to login</div>
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: 500,
+                            color: "var(--text)",
+                          }}
+                        >
+                          Sign out of Nexus
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "11.5px",
+                            color: "var(--text3)",
+                            marginTop: "2px",
+                          }}
+                        >
+                          Clear session and return to login
+                        </div>
                       </div>
-                      <Btn variant="danger" onClick={() => setLogoutConfirm(true)}>Sign Out</Btn>
+                      <Btn
+                        variant="danger"
+                        onClick={() => setLogoutConfirm(true)}
+                      >
+                        Sign Out
+                      </Btn>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* ── EMAIL ── */}
-              {section === 'email' && (
-                <div style={{ maxWidth: '860px' }}>
+              {section === "email" && (
+                <div style={{ maxWidth: "860px" }}>
                   <SectionTitle>Sender Identity</SectionTitle>
                   <LocalTextField
                     label="Default sender name"
@@ -622,47 +1366,102 @@ export default function SettingsPage() {
                     onSave={(v) => save({ defaultFromEmail: v })}
                     placeholder="Enter your email to receive task reminders and set the default From address for outgoing emails"
                   />
-                  <div style={{
-                    marginTop: '2px', marginBottom: '20px',
-                    padding: '12px 14px', borderRadius: 'var(--r2)',
-                    background: settings.defaultFromEmail ? 'rgba(77,184,138,0.08)' : 'rgba(232,154,69,0.08)',
-                    border: `1px solid ${settings.defaultFromEmail ? 'rgba(77,184,138,0.3)' : 'rgba(232,154,69,0.3)'}`,
-                    display: 'flex', gap: '10px', alignItems: 'flex-start',
-                  }}>
-                    <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>
-                      {settings.defaultFromEmail ? <i className="fi fi-rr-bell" aria-hidden="true" /> : <i className="fi fi-rr-info-circle" aria-hidden="true" />}
+                  <div
+                    style={{
+                      marginTop: "2px",
+                      marginBottom: "20px",
+                      padding: "12px 14px",
+                      borderRadius: "var(--r2)",
+                      background: settings.defaultFromEmail
+                        ? "rgba(77,184,138,0.08)"
+                        : "rgba(232,154,69,0.08)",
+                      border: `1px solid ${settings.defaultFromEmail ? "rgba(77,184,138,0.3)" : "rgba(232,154,69,0.3)"}`,
+                      display: "flex",
+                      gap: "10px",
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "18px",
+                        flexShrink: 0,
+                        marginTop: "1px",
+                      }}
+                    >
+                      {settings.defaultFromEmail ? (
+                        <i className="fi fi-rr-bell" aria-hidden="true" />
+                      ) : (
+                        <i
+                          className="fi fi-rr-info-circle"
+                          aria-hidden="true"
+                        />
+                      )}
                     </span>
                     <div>
-                      <div style={{
-                        fontSize: '12.5px', fontWeight: 600,
-                        color: settings.defaultFromEmail ? 'var(--green)' : 'var(--amber)',
-                        marginBottom: '4px', fontFamily: 'var(--font-syne)',
-                      }}>
+                      <div
+                        style={{
+                          fontSize: "12.5px",
+                          fontWeight: 600,
+                          color: settings.defaultFromEmail
+                            ? "var(--green)"
+                            : "var(--amber)",
+                          marginBottom: "4px",
+                          fontFamily: "var(--font-syne)",
+                        }}
+                      >
                         Task Reminder Recipient
                       </div>
                       {settings.defaultFromEmail ? (
-                        <div style={{ fontSize: '12px', color: 'var(--text2)', lineHeight: 1.6 }}>
-                          Task reminder emails will be sent to{' '}
-                          <strong style={{ color: 'var(--text)', fontFamily: 'monospace' }}>
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--text2)",
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          Task reminder emails will be sent to{" "}
+                          <strong
+                            style={{
+                              color: "var(--text)",
+                              fontFamily: "monospace",
+                            }}
+                          >
                             {settings.defaultFromEmail}
-                          </strong>.
+                          </strong>
+                          .
                           <br />
-                          Two reminders: <strong>15 minutes before</strong> and <strong>at the exact due time</strong> — only if task is still pending.
+                          Two reminders: <strong>
+                            15 minutes before
+                          </strong> and <strong>at the exact due time</strong> —
+                          only if task is still pending.
                         </div>
                       ) : (
-                        <div style={{ fontSize: '12px', color: 'var(--text2)', lineHeight: 1.6 }}>
-                          Set your email address above to receive task reminder notifications.
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--text2)",
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          Set your email address above to receive task reminder
+                          notifications.
                         </div>
                       )}
                     </div>
                   </div>
 
                   <SectionTitle>Compose Options</SectionTitle>
-                  <SettingRow label="BCC self" description="Always BCC yourself on sent emails">
-                    <Toggle checked={settings.bccSelf} onChange={(v) => save({ bccSelf: v })} />
+                  <SettingRow
+                    label="BCC self"
+                    description="Always BCC yourself on sent emails"
+                  >
+                    <Toggle
+                      checked={settings.bccSelf}
+                      onChange={(v) => save({ bccSelf: v })}
+                    />
                   </SettingRow>
 
-                  <div style={{ marginTop: '20px' }}>
+                  <div style={{ marginTop: "20px" }}>
                     <SectionTitle>Email Signature</SectionTitle>
                     <LocalTextarea
                       label="Signature"
@@ -672,39 +1471,118 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  <div style={{ marginTop: '8px' }}>
+                  <div style={{ marginTop: "8px" }}>
                     <SectionTitle>Quick Recipients</SectionTitle>
-                    <p style={{ fontSize: '11.5px', color: 'var(--text3)', marginBottom: '10px' }}>
-                      These appear as one-click options in the email compose window.
+                    <p
+                      style={{
+                        fontSize: "11.5px",
+                        color: "var(--text3)",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      These appear as one-click options in the email compose
+                      window.
                     </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "6px",
+                        marginBottom: "10px",
+                      }}
+                    >
                       {settings.quickRecipients.length === 0 ? (
-                        <div style={{ fontSize: '12.5px', color: 'var(--text3)', padding: '10px 0' }}>
+                        <div
+                          style={{
+                            fontSize: "12.5px",
+                            color: "var(--text3)",
+                            padding: "10px 0",
+                          }}
+                        >
                           No quick recipients saved.
                         </div>
-                      ) : settings.quickRecipients.map((email, i) => (
-                        <div key={i} style={{
-                          display: 'flex', alignItems: 'center', gap: '10px',
-                          padding: '8px 12px', background: 'var(--bg3)',
-                          borderRadius: 'var(--r2)', border: '1px solid var(--border)',
-                        }}>
-                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--text3)" strokeWidth="1.5">
-                            <rect x="2" y="4" width="12" height="9" rx="2"/><path d="M2 7l6 4 6-4"/>
-                          </svg>
-                          <span style={{ flex: 1, fontSize: '13px', color: 'var(--text)' }}>{email}</span>
-                          <button
-                            onClick={() => save({ quickRecipients: settings.quickRecipients.filter((_, j) => j !== i) })}
-                            style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: '2px', display: 'flex' }}
+                      ) : (
+                        settings.quickRecipients.map((email, i) => (
+                          <div
+                            key={i}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              padding: "8px 12px",
+                              background: "var(--bg3)",
+                              borderRadius: "var(--r2)",
+                              border: "1px solid var(--border)",
+                            }}
                           >
-                            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                              <path d="M10.5 3.5l-7 7M3.5 3.5l7 7"/>
+                            <svg
+                              width="13"
+                              height="13"
+                              viewBox="0 0 16 16"
+                              fill="none"
+                              stroke="var(--text3)"
+                              strokeWidth="1.5"
+                            >
+                              <rect x="2" y="4" width="12" height="9" rx="2" />
+                              <path d="M2 7l6 4 6-4" />
                             </svg>
-                          </button>
-                        </div>
-                      ))}
+                            <span
+                              style={{
+                                flex: 1,
+                                fontSize: "13px",
+                                color: "var(--text)",
+                              }}
+                            >
+                              {email}
+                            </span>
+                            <button
+                              onClick={() =>
+                                save({
+                                  quickRecipients:
+                                    settings.quickRecipients.filter(
+                                      (_, j) => j !== i,
+                                    ),
+                                })
+                              }
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: "var(--text3)",
+                                cursor: "pointer",
+                                padding: "2px",
+                                display: "flex",
+                              }}
+                            >
+                              <svg
+                                width="13"
+                                height="13"
+                                viewBox="0 0 14 14"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                              >
+                                <path d="M10.5 3.5l-7 7M3.5 3.5l7 7" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))
+                      )}
                     </div>
-                    <Btn size="sm" variant="ghost" onClick={() => setRecipientOpen(true)}>
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v10M3 8h10"/></svg>
+                    <Btn
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setRecipientOpen(true)}
+                    >
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M8 3v10M3 8h10" />
+                      </svg>
                       Add recipient
                     </Btn>
                   </div>
@@ -712,49 +1590,71 @@ export default function SettingsPage() {
               )}
 
               {/* ── CONTACTS ── */}
-              {section === 'contacts' && (
-                <div style={{ maxWidth: '860px' }}>
+              {section === "contacts" && (
+                <div style={{ maxWidth: "860px" }}>
                   <SectionTitle>Display</SectionTitle>
-                  <SettingRow label="Default sort order" description="How contacts are ordered by default">
+                  <SettingRow
+                    label="Default sort order"
+                    description="How contacts are ordered by default"
+                  >
                     <PillGroup
                       options={[
-                        { value: 'name' as const,   label: 'A–Z'    },
-                        { value: 'recent' as const, label: 'Recent' },
-                        { value: 'added' as const,  label: 'Added'  },
+                        { value: "name" as const, label: "A–Z" },
+                        { value: "recent" as const, label: "Recent" },
+                        { value: "added" as const, label: "Added" },
                       ]}
                       value={settings.defaultContactSort}
                       onChange={(v) => save({ defaultContactSort: v })}
                     />
                   </SettingRow>
 
-                  <div style={{ marginTop: '24px' }}>
+                  <div style={{ marginTop: "24px" }}>
                     <SectionTitle>Search Fields</SectionTitle>
-                    <div style={{ padding: '14px 0', borderBottom: '1px solid var(--border)' }}>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text3)', marginBottom: '10px' }}>
+                    <div
+                      style={{
+                        padding: "14px 0",
+                        borderBottom: "1px solid var(--border)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "11.5px",
+                          color: "var(--text3)",
+                          marginBottom: "10px",
+                        }}
+                      >
                         Which fields are included in contact search
                       </div>
                       <MultiToggle
                         options={[
-                          { value: 'name' as const,  label: 'Name'  },
-                          { value: 'phone' as const, label: 'Phone' },
-                          { value: 'email' as const, label: 'Email' },
-                          { value: 'tags' as const,  label: 'Tags'  },
-                          { value: 'notes' as const, label: 'Notes' },
+                          { value: "name" as const, label: "Name" },
+                          { value: "phone" as const, label: "Phone" },
+                          { value: "email" as const, label: "Email" },
+                          { value: "tags" as const, label: "Tags" },
+                          { value: "notes" as const, label: "Notes" },
                         ]}
                         values={settings.contactSearchFields}
-                        onChange={(v) => save({ contactSearchFields: v as AppSettings['contactSearchFields'] })}
+                        onChange={(v) =>
+                          save({
+                            contactSearchFields:
+                              v as AppSettings["contactSearchFields"],
+                          })
+                        }
                       />
                     </div>
                   </div>
 
-                  <div style={{ marginTop: '24px' }}>
+                  <div style={{ marginTop: "24px" }}>
                     <SectionTitle>Import</SectionTitle>
-                    <SettingRow label="Duplicate handling" description="What to do when importing existing contacts">
+                    <SettingRow
+                      label="Duplicate handling"
+                      description="What to do when importing existing contacts"
+                    >
                       <PillGroup
                         options={[
-                          { value: 'skip' as const,      label: 'Skip'      },
-                          { value: 'overwrite' as const, label: 'Overwrite' },
-                          { value: 'merge' as const,     label: 'Merge'     },
+                          { value: "skip" as const, label: "Skip" },
+                          { value: "overwrite" as const, label: "Overwrite" },
+                          { value: "merge" as const, label: "Merge" },
                         ]}
                         value={settings.importDuplicateHandling}
                         onChange={(v) => save({ importDuplicateHandling: v })}
@@ -762,15 +1662,43 @@ export default function SettingsPage() {
                     </SettingRow>
                   </div>
 
-                  <div style={{ marginTop: '24px' }}>
+                  <div style={{ marginTop: "24px" }}>
                     <SectionTitle>Export Contacts</SectionTitle>
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                      <Btn variant="ghost" onClick={() => handleExportContacts('csv')}>
-                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 2v8M4 10l4 4 4-4"/><path d="M2 14h12"/></svg>
+                    <div
+                      style={{ display: "flex", gap: "8px", marginTop: "4px" }}
+                    >
+                      <Btn
+                        variant="ghost"
+                        onClick={() => handleExportContacts("csv")}
+                      >
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                        >
+                          <path d="M8 2v8M4 10l4 4 4-4" />
+                          <path d="M2 14h12" />
+                        </svg>
                         Export CSV
                       </Btn>
-                      <Btn variant="ghost" onClick={() => handleExportContacts('vcf')}>
-                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 2v8M4 10l4 4 4-4"/><path d="M2 14h12"/></svg>
+                      <Btn
+                        variant="ghost"
+                        onClick={() => handleExportContacts("vcf")}
+                      >
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                        >
+                          <path d="M8 2v8M4 10l4 4 4-4" />
+                          <path d="M2 14h12" />
+                        </svg>
                         Export VCF
                       </Btn>
                     </div>
@@ -779,106 +1707,432 @@ export default function SettingsPage() {
               )}
 
               {/* ── DATA ── */}
-              {section === 'data' && (
-                <div style={{ maxWidth: '860px' }}>
+              {section === "data" && (
+                <div style={{ maxWidth: "860px" }}>
                   <SectionTitle>Backup & Export</SectionTitle>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    gap: '16px', padding: '14px', background: 'var(--bg2)',
-                    border: '1px solid var(--border)', borderRadius: 'var(--r2)', marginBottom: '8px',
-                  }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "16px",
+                      padding: "14px",
+                      background: "var(--bg2)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--r2)",
+                      marginBottom: "8px",
+                    }}
+                  >
                     <div>
-                      <div style={{ fontSize: '13.5px', fontWeight: 500, color: 'var(--text)' }}>Export all data</div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text3)', marginTop: '2px' }}>Full JSON backup of contacts, tasks, and emails</div>
+                      <div
+                        style={{
+                          fontSize: "13.5px",
+                          fontWeight: 500,
+                          color: "var(--text)",
+                        }}
+                      >
+                        Export all data
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "11.5px",
+                          color: "var(--text3)",
+                          marginTop: "2px",
+                        }}
+                      >
+                        Full JSON backup of contacts, tasks, and emails
+                      </div>
                     </div>
                     <Btn variant="ghost" onClick={handleExportData}>
-                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 2v8M4 10l4 4 4-4"/><path d="M2 14h12"/></svg>
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      >
+                        <path d="M8 2v8M4 10l4 4 4-4" />
+                        <path d="M2 14h12" />
+                      </svg>
                       Export
                     </Btn>
                   </div>
 
-                  <div style={{ marginTop: '28px' }}>
+                  <div style={{ marginTop: "28px" }}>
                     <SectionTitle>Clear Section Data</SectionTitle>
-                    <div style={{ fontSize: '12px', color: 'var(--text3)', marginBottom: '12px' }}>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--text3)",
+                        marginBottom: "12px",
+                      }}
+                    >
                       Permanently deletes all records. Cannot be undone.
                     </div>
-                    {(['contacts', 'tasks', 'emails'] as const).map((sec) => (
-                      <div key={sec} style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '12px 14px', background: 'var(--bg2)',
-                        border: '1px solid var(--border)', borderRadius: 'var(--r2)', marginBottom: '6px',
-                      }}>
-                        <div style={{ fontSize: '13px', fontWeight: 500, textTransform: 'capitalize', color: 'var(--text)' }}>
+                    {(["contacts", "tasks", "emails"] as const).map((sec) => (
+                      <div
+                        key={sec}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "12px 14px",
+                          background: "var(--bg2)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--r2)",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: 500,
+                            textTransform: "capitalize",
+                            color: "var(--text)",
+                          }}
+                        >
                           Delete all {sec}
                         </div>
-                        <Btn size="sm" variant="danger" onClick={() => setClearModal(sec)}>Delete</Btn>
+                        <Btn
+                          size="sm"
+                          variant="danger"
+                          onClick={() => setClearModal(sec)}
+                        >
+                          Delete
+                        </Btn>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-
             </motion.div>
           </AnimatePresence>
         </div>
       </div>
 
       {/* ── Modals ── */}
-      <Modal open={pwdOpen} onClose={() => setPwdOpen(false)} title="Change Password"
-        footer={<><Btn variant="ghost" onClick={() => setPwdOpen(false)}>Cancel</Btn><Btn variant="primary" onClick={handleChangePassword} disabled={pwdLoading}>{pwdLoading ? 'Saving…' : 'Update Password'}</Btn></>}>
-        <FormField label="Current password"><Input type="password" value={pwdForm.current} onChange={(e) => setPwdForm({ ...pwdForm, current: e.target.value })} placeholder="••••••••" /></FormField>
-        <FormField label="New password"><Input type="password" value={pwdForm.next} onChange={(e) => setPwdForm({ ...pwdForm, next: e.target.value })} placeholder="Min. 8 characters" /></FormField>
-        <FormField label="Confirm new password"><Input type="password" value={pwdForm.confirm} onChange={(e) => setPwdForm({ ...pwdForm, confirm: e.target.value })} placeholder="Repeat new password" /></FormField>
-      </Modal>
-
-      <Modal open={pinOpen} onClose={() => setPinOpen(false)} title={hasPin ? 'Change Vault PIN' : 'Set Vault PIN'}
-        footer={<><Btn variant="ghost" onClick={() => setPinOpen(false)}>Cancel</Btn><Btn variant="primary" onClick={handleSetPin} disabled={pinLoading}>{pinLoading ? 'Saving…' : hasPin ? 'Update PIN' : 'Set PIN'}</Btn></>}>
-        <div style={{ fontSize: '12.5px', color: 'var(--text3)', marginBottom: '16px', display: 'flex', gap: '6px' }}>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" strokeWidth="1.5" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5h.01"/></svg>
-          PIN is stored as a bcrypt hash — never in plain text or cookies.
-        </div>
-        {hasPin && <FormField label="Current PIN"><Input type="password" inputMode="numeric" value={pinForm.current} onChange={(e) => setPinForm({ ...pinForm, current: e.target.value.replace(/\D/g, '') })} placeholder="Enter current PIN" /></FormField>}
-        <FormField label="New PIN (min. 4 digits)"><Input type="password" inputMode="numeric" value={pinForm.pin} onChange={(e) => setPinForm({ ...pinForm, pin: e.target.value.replace(/\D/g, '') })} placeholder="••••" /></FormField>
-        <FormField label="Confirm new PIN"><Input type="password" inputMode="numeric" value={pinForm.confirm} onChange={(e) => setPinForm({ ...pinForm, confirm: e.target.value.replace(/\D/g, '') })} placeholder="••••" /></FormField>
-      </Modal>
-
-      <Modal open={removePin} onClose={() => setRemovePin(false)} title="Remove Vault PIN"
-        footer={<><Btn variant="ghost" onClick={() => setRemovePin(false)}>Cancel</Btn><Btn variant="danger" onClick={handleRemovePin} disabled={pinLoading}>{pinLoading ? 'Removing…' : 'Remove PIN'}</Btn></>}>
-        <div style={{ fontSize: '13px', color: 'var(--text2)', marginBottom: '16px' }}>Enter your current PIN to confirm removal.</div>
-        <FormField label="Current PIN"><Input type="password" inputMode="numeric" value={pinForm.current} onChange={(e) => setPinForm({ ...pinForm, current: e.target.value.replace(/\D/g, '') })} placeholder="••••" /></FormField>
-      </Modal>
-
-      <Modal open={forgotPin} onClose={() => setForgotPin(false)} title="Reset Vault PIN"
-        footer={<><Btn variant="ghost" onClick={() => setForgotPin(false)}>Cancel</Btn><Btn variant="primary" onClick={handleForgotPin} disabled={pinLoading}>{pinLoading ? 'Resetting…' : 'Reset PIN'}</Btn></>}>
-        <div style={{ fontSize: '12.5px', color: 'var(--text3)', marginBottom: '16px', padding: '10px 12px', background: 'var(--bg3)', borderRadius: 'var(--r2)', border: '1px solid var(--border)' }}>
-          Enter your <strong style={{ color: 'var(--text)' }}>account password</strong> to verify identity, then set a new PIN.
-        </div>
-        <FormField label="Account password"><Input type="password" value={passwordForPinReset} onChange={(e) => setPasswordForPinReset(e.target.value)} placeholder="Your login password" /></FormField>
-        <FormField label="New PIN (min. 4 digits)"><Input type="password" inputMode="numeric" value={pinForm.pin} onChange={(e) => setPinForm({ ...pinForm, pin: e.target.value.replace(/\D/g, '') })} placeholder="••••" /></FormField>
-        <FormField label="Confirm new PIN"><Input type="password" inputMode="numeric" value={pinForm.confirm} onChange={(e) => setPinForm({ ...pinForm, confirm: e.target.value.replace(/\D/g, '') })} placeholder="••••" /></FormField>
-      </Modal>
-
-      <Modal open={recipientOpen} onClose={() => setRecipientOpen(false)} title="Add Quick Recipient"
-        footer={<><Btn variant="ghost" onClick={() => setRecipientOpen(false)}>Cancel</Btn><Btn variant="primary" onClick={() => {
-          if (!newRecipient) return;
-          save({ quickRecipients: [...settings.quickRecipients, newRecipient] });
-          setNewRecipient(''); setRecipientOpen(false); toast.success('Recipient added');
-        }}>Add</Btn></>}>
-        <FormField label="Email address">
-          <Input type="email" value={newRecipient} onChange={(e) => setNewRecipient(e.target.value)} placeholder="dad@example.com" />
+      <Modal
+        open={pwdOpen}
+        onClose={() => setPwdOpen(false)}
+        title="Change Password"
+        footer={
+          <>
+            <Btn variant="ghost" onClick={() => setPwdOpen(false)}>
+              Cancel
+            </Btn>
+            <Btn
+              variant="primary"
+              onClick={handleChangePassword}
+              disabled={pwdLoading}
+            >
+              {pwdLoading ? "Saving…" : "Update Password"}
+            </Btn>
+          </>
+        }
+      >
+        <FormField label="Current password">
+          <Input
+            type="password"
+            value={pwdForm.current}
+            onChange={(e) =>
+              setPwdForm({ ...pwdForm, current: e.target.value })
+            }
+            placeholder="••••••••"
+          />
+        </FormField>
+        <FormField label="New password">
+          <Input
+            type="password"
+            value={pwdForm.next}
+            onChange={(e) => setPwdForm({ ...pwdForm, next: e.target.value })}
+            placeholder="Min. 8 characters"
+          />
+        </FormField>
+        <FormField label="Confirm new password">
+          <Input
+            type="password"
+            value={pwdForm.confirm}
+            onChange={(e) =>
+              setPwdForm({ ...pwdForm, confirm: e.target.value })
+            }
+            placeholder="Repeat new password"
+          />
         </FormField>
       </Modal>
 
-      <Modal open={!!clearModal} onClose={() => setClearModal(null)} title={`Delete all ${clearModal}?`}
-        footer={<><Btn variant="ghost" onClick={() => setClearModal(null)}>Cancel</Btn><Btn variant="danger" onClick={() => clearModal && handleClearSection(clearModal)}>Yes, delete all {clearModal}</Btn></>}>
-        <div style={{ fontSize: '13.5px', color: 'var(--text2)', lineHeight: 1.7 }}>
-          This will permanently delete <strong>all {clearModal}</strong>. This action cannot be undone.
+      <Modal
+        open={pinOpen}
+        onClose={() => setPinOpen(false)}
+        title={hasPin ? "Change Vault PIN" : "Set Vault PIN"}
+        footer={
+          <>
+            <Btn variant="ghost" onClick={() => setPinOpen(false)}>
+              Cancel
+            </Btn>
+            <Btn variant="primary" onClick={handleSetPin} disabled={pinLoading}>
+              {pinLoading ? "Saving…" : hasPin ? "Update PIN" : "Set PIN"}
+            </Btn>
+          </>
+        }
+      >
+        <div
+          style={{
+            fontSize: "12.5px",
+            color: "var(--text3)",
+            marginBottom: "16px",
+            display: "flex",
+            gap: "6px",
+          }}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="var(--accent)"
+            strokeWidth="1.5"
+            style={{ flexShrink: 0, marginTop: 1 }}
+          >
+            <circle cx="8" cy="8" r="6" />
+            <path d="M8 7v4M8 5h.01" />
+          </svg>
+          PIN is stored as a bcrypt hash — never in plain text or cookies.
+        </div>
+        {hasPin && (
+          <FormField label="Current PIN">
+            <Input
+              type="password"
+              inputMode="numeric"
+              value={pinForm.current}
+              onChange={(e) =>
+                setPinForm({
+                  ...pinForm,
+                  current: e.target.value.replace(/\D/g, ""),
+                })
+              }
+              placeholder="Enter current PIN"
+            />
+          </FormField>
+        )}
+        <FormField label="New PIN (min. 4 digits)">
+          <Input
+            type="password"
+            inputMode="numeric"
+            value={pinForm.pin}
+            onChange={(e) =>
+              setPinForm({ ...pinForm, pin: e.target.value.replace(/\D/g, "") })
+            }
+            placeholder="••••"
+          />
+        </FormField>
+        <FormField label="Confirm new PIN">
+          <Input
+            type="password"
+            inputMode="numeric"
+            value={pinForm.confirm}
+            onChange={(e) =>
+              setPinForm({
+                ...pinForm,
+                confirm: e.target.value.replace(/\D/g, ""),
+              })
+            }
+            placeholder="••••"
+          />
+        </FormField>
+      </Modal>
+
+      <Modal
+        open={removePin}
+        onClose={() => setRemovePin(false)}
+        title="Remove Vault PIN"
+        footer={
+          <>
+            <Btn variant="ghost" onClick={() => setRemovePin(false)}>
+              Cancel
+            </Btn>
+            <Btn
+              variant="danger"
+              onClick={handleRemovePin}
+              disabled={pinLoading}
+            >
+              {pinLoading ? "Removing…" : "Remove PIN"}
+            </Btn>
+          </>
+        }
+      >
+        <div
+          style={{
+            fontSize: "13px",
+            color: "var(--text2)",
+            marginBottom: "16px",
+          }}
+        >
+          Enter your current PIN to confirm removal.
+        </div>
+        <FormField label="Current PIN">
+          <Input
+            type="password"
+            inputMode="numeric"
+            value={pinForm.current}
+            onChange={(e) =>
+              setPinForm({
+                ...pinForm,
+                current: e.target.value.replace(/\D/g, ""),
+              })
+            }
+            placeholder="••••"
+          />
+        </FormField>
+      </Modal>
+
+      <Modal
+        open={forgotPin}
+        onClose={() => setForgotPin(false)}
+        title="Reset Vault PIN"
+        footer={
+          <>
+            <Btn variant="ghost" onClick={() => setForgotPin(false)}>
+              Cancel
+            </Btn>
+            <Btn
+              variant="primary"
+              onClick={handleForgotPin}
+              disabled={pinLoading}
+            >
+              {pinLoading ? "Resetting…" : "Reset PIN"}
+            </Btn>
+          </>
+        }
+      >
+        <div
+          style={{
+            fontSize: "12.5px",
+            color: "var(--text3)",
+            marginBottom: "16px",
+            padding: "10px 12px",
+            background: "var(--bg3)",
+            borderRadius: "var(--r2)",
+            border: "1px solid var(--border)",
+          }}
+        >
+          Enter your{" "}
+          <strong style={{ color: "var(--text)" }}>account password</strong> to
+          verify identity, then set a new PIN.
+        </div>
+        <FormField label="Account password">
+          <Input
+            type="password"
+            value={passwordForPinReset}
+            onChange={(e) => setPasswordForPinReset(e.target.value)}
+            placeholder="Your login password"
+          />
+        </FormField>
+        <FormField label="New PIN (min. 4 digits)">
+          <Input
+            type="password"
+            inputMode="numeric"
+            value={pinForm.pin}
+            onChange={(e) =>
+              setPinForm({ ...pinForm, pin: e.target.value.replace(/\D/g, "") })
+            }
+            placeholder="••••"
+          />
+        </FormField>
+        <FormField label="Confirm new PIN">
+          <Input
+            type="password"
+            inputMode="numeric"
+            value={pinForm.confirm}
+            onChange={(e) =>
+              setPinForm({
+                ...pinForm,
+                confirm: e.target.value.replace(/\D/g, ""),
+              })
+            }
+            placeholder="••••"
+          />
+        </FormField>
+      </Modal>
+
+      <Modal
+        open={recipientOpen}
+        onClose={() => setRecipientOpen(false)}
+        title="Add Quick Recipient"
+        footer={
+          <>
+            <Btn variant="ghost" onClick={() => setRecipientOpen(false)}>
+              Cancel
+            </Btn>
+            <Btn
+              variant="primary"
+              onClick={() => {
+                if (!newRecipient) return;
+                save({
+                  quickRecipients: [...settings.quickRecipients, newRecipient],
+                });
+                setNewRecipient("");
+                setRecipientOpen(false);
+                toast.success("Recipient added");
+              }}
+            >
+              Add
+            </Btn>
+          </>
+        }
+      >
+        <FormField label="Email address">
+          <Input
+            type="email"
+            value={newRecipient}
+            onChange={(e) => setNewRecipient(e.target.value)}
+            placeholder="dad@example.com"
+          />
+        </FormField>
+      </Modal>
+
+      <Modal
+        open={!!clearModal}
+        onClose={() => setClearModal(null)}
+        title={`Delete all ${clearModal}?`}
+        footer={
+          <>
+            <Btn variant="ghost" onClick={() => setClearModal(null)}>
+              Cancel
+            </Btn>
+            <Btn
+              variant="danger"
+              onClick={() => clearModal && handleClearSection(clearModal)}
+            >
+              Yes, delete all {clearModal}
+            </Btn>
+          </>
+        }
+      >
+        <div
+          style={{ fontSize: "13.5px", color: "var(--text2)", lineHeight: 1.7 }}
+        >
+          This will permanently delete <strong>all {clearModal}</strong>. This
+          action cannot be undone.
         </div>
       </Modal>
 
-      <Modal open={logoutConfirm} onClose={() => setLogoutConfirm(false)} title="Sign out?"
-        footer={<><Btn variant="ghost" onClick={() => setLogoutConfirm(false)}>Stay</Btn><Btn variant="danger" onClick={logout}>Sign Out</Btn></>}>
-        <div style={{ fontSize: '13.5px', color: 'var(--text2)' }}>
+      <Modal
+        open={logoutConfirm}
+        onClose={() => setLogoutConfirm(false)}
+        title="Sign out?"
+        footer={
+          <>
+            <Btn variant="ghost" onClick={() => setLogoutConfirm(false)}>
+              Stay
+            </Btn>
+            <Btn variant="danger" onClick={logout}>
+              Sign Out
+            </Btn>
+          </>
+        }
+      >
+        <div style={{ fontSize: "13.5px", color: "var(--text2)" }}>
           You'll be redirected to the login page. Your data is safely stored.
         </div>
       </Modal>

@@ -1,7 +1,7 @@
 // src/app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { comparePassword, signToken, setCookieHeader } from '@/lib/auth';
+import { comparePassword, getClientIp, getRequestLocation, parseUserAgent, signToken, setCookieHeader } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   // ── Step 1: check env vars are present ─────────────────────────────────
@@ -65,9 +65,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
-  // ── Step 5: sign token and set cookie ───────────────────────────────────
+  // ── Step 5: create  a tracked session and sign token  and sign cookie ───────────────────────────────────
   try {
-    const token = signToken({ userId: user.id, email: user.email, role: user.role });
+    const ua = req.headers.get('user-agent') || '';
+    const parsed = parseUserAgent(ua);
+    const expiresAt  = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30); // 30 days
+    const session = await prisma.userSession.create({
+      data:{
+        userId: user.id,
+        device: parsed.device,
+        browser: parsed.browser,
+        os: parsed.os,
+        ipAddress: getClientIp(req),
+        location: getRequestLocation(req),
+        UserAgent: ua,
+        expiresAt,
+      },
+    });
+    // sessionId isn't part of the JWTPayload type; cast to any to include it in the token
+     const token = signToken({ userId: user.id, email: user.email, role: user.role, sessionId: session.id });
     const response = NextResponse.json({
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
     });

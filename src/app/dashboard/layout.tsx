@@ -7,10 +7,11 @@ import { useSettings } from '@/hooks/useSettings';
 import Sidebar from '@/components/layout/Sidebar';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, fetchMe } = useAuth();
-  const { fetchSettings, settings, loaded: settingsLoaded } = useSettings();
+  const { user, loading, fetchMe, logout} = useAuth();
+  const { fetchSettings, settings, loaded: settingsLoaded }: { fetchSettings: () => void; settings: { sessionTimeout?: number } | null; loaded: boolean } = useSettings();
   const router = useRouter();
   const fetched = useRef(false);
+  const autoLogoutTimer = useRef<Number | null>(null);
 
   useEffect(() => {
     if (!fetched.current) {
@@ -19,6 +20,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       fetchSettings();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const sessionTimeout = settings?.sessionTimeout ?? 0;
+    if (!user || !settingsLoaded || sessionTimeout === 0) {
+      if (autoLogoutTimer.current) window.clearTimeout(autoLogoutTimer.current);
+      return;
+    }
+
+    const timeoutMs = sessionTimeout * 60 * 1000;
+    const resetTimer = () => {
+      if (autoLogoutTimer.current) window.clearTimeout(autoLogoutTimer.current);
+      autoLogoutTimer.current = window.setTimeout(() => {
+        logout();
+      }, timeoutMs);
+    };
+
+    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'visibilitychange'];
+    activityEvents.forEach((event) => window.addEventListener(event, resetTimer, { passive: true }));
+    resetTimer();
+
+    return () => {
+      if (autoLogoutTimer.current) window.clearTimeout(autoLogoutTimer.current);
+      activityEvents.forEach((event) => window.removeEventListener(event, resetTimer));
+    };
+  }, [logout, settings.sessionTimeout, settingsLoaded, user]);
 
   useEffect(() => {
     if (!loading && !user) {

@@ -27,8 +27,36 @@ model User {
   personalDocuments PersonalDocument[]
   documentVault     DocumentVault[]
   settings          UserSettings?
+  sessions          UserSession[]
 }
 
+model UserSession {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  device    String  @default("unknown device") // e.g. "Chrome on Windows", "iPhone Safari"
+  browser   String  @default("unknown browser") // e.g. "Chrome", "Firefox"
+  os        String  @default("unknown OS")      // e.g. "Windows", "iOS"
+  ipAddress String  @default("unknown IP") // optional IP address for security monitoring
+  location  String  @default("Location Unknown") // optional geolocation based on IP
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  UserAgent String  @default("") @db.Text // full user agent string for analytics
+  lastActive DateTime @default(now())
+  revokedAt DateTime?
+  updatedAt DateTime @updatedAt
+
+
+
+  @@index([userId])
+  @@index([revokedAt, expiresAt]) // for efficient session cleanup
+  
+
+}
 // ── Per-user settings stored in DB (replaces cookie-based settings) ──────────
 model UserSettings {
   id        String   @id @default(cuid())
