@@ -17,6 +17,7 @@ const SECTIONS = [
   { key: "security", label: "Security", icon: "fi fi-rr-lock" },
   { key: "email", label: "Email", icon: "fi fi-rr-envelope" },
   { key: "contacts", label: "Contacts", icon: "fi fi-rr-user" },
+  { key: "health",     label: "Health",     icon: "fi fi-rr-heart"     },
   { key: "data", label: "Data", icon: "fi fi-rr-database" },
 ] as const;
 type Section = (typeof SECTIONS)[number]["key"];
@@ -351,9 +352,15 @@ export default function SettingsPage() {
     saveSettings,
     applyNow,
     saving,
-    activeSection: section,
-    setActiveSection: setSection,
+    activeSection,
+    setActiveSection,
   } = useSettings();
+
+  const section = activeSection as Section;
+
+  function setSection(value: Section) {
+    setActiveSection(value as any);
+  }
 
   const [justSaved, setJustSaved] = useState(false);
 
@@ -1228,7 +1235,7 @@ export default function SettingsPage() {
                             setPinOpen(true);
                           }}
                         >
-                          {hasPin ? "🔑 Change PIN" : "🔒 Set PIN"}
+                          {hasPin ? " Change PIN" : "🔒 Set PIN"}
                         </Btn>
                         {hasPin && (
                           <>
@@ -1706,6 +1713,127 @@ export default function SettingsPage() {
                   </div>
                 </div>
               )}
+
+              {section === "health" && (
+  <div style={{ maxWidth: "860px" }}>
+    <SectionTitle>Measurement Units</SectionTitle>
+    <SettingRow
+      label="Weight unit"
+      description="Used when displaying and entering weight"
+    >
+      <PillGroup
+        options={[
+          { value: "kg"  as const, label: "kg (Kilograms)" },
+          { value: "lbs" as const, label: "lbs (Pounds)"   },
+        ]}
+        value={settings.healthWeightUnit}
+        onChange={(v) => save({ healthWeightUnit: v })}
+      />
+    </SettingRow>
+    <SettingRow
+      label="Height unit"
+      description="Used when displaying and entering height"
+    >
+      <PillGroup
+        options={[
+          { value: "cm" as const, label: "cm (Centimetres)" },
+          { value: "ft" as const, label: "ft/in (Feet)"     },
+        ]}
+        value={settings.healthHeightUnit}
+        onChange={(v) => save({ healthHeightUnit: v })}
+      />
+    </SettingRow>
+    <SettingRow
+      label="Temperature unit"
+      description="Used for body temperature readings"
+    >
+      <PillGroup
+        options={[
+          { value: "celsius"    as const, label: "°C (Celsius)"    },
+          { value: "fahrenheit" as const, label: "°F (Fahrenheit)" },
+        ]}
+        value={settings.healthTempUnit}
+        onChange={(v) => save({ healthTempUnit: v })}
+      />
+    </SettingRow>
+    <SettingRow
+      label="Blood glucose unit"
+      description="Used when recording blood sugar levels"
+    >
+      <PillGroup
+        options={[
+          { value: "mgdl"  as const, label: "mg/dL" },
+          { value: "mmoll" as const, label: "mmol/L" },
+        ]}
+        value={settings.healthGlucoseUnit}
+        onChange={(v) => save({ healthGlucoseUnit: v })}
+      />
+    </SettingRow>
+
+    <div style={{ marginTop: "24px" }}>
+      <SectionTitle>Reminders</SectionTitle>
+      <SettingRow
+        label="Appointment reminders"
+        description="Show upcoming appointment alerts in the Health section"
+      >
+        <Toggle
+          checked={settings.healthShowReminders}
+          onChange={(v) => save({ healthShowReminders: v })}
+        />
+      </SettingRow>
+      <SettingRow
+        label="Reminder lead time"
+        description="How many days before an appointment to flag it"
+      >
+        <PillGroup
+          options={[
+            { value: 1 as number, label: "1 day"  },
+            { value: 3 as number, label: "3 days" },
+            { value: 7 as number, label: "7 days" },
+          ]}
+          value={settings.healthApptReminderDays}
+          onChange={(v) => save({ healthApptReminderDays: v as number })}
+        />
+      </SettingRow>
+    </div>
+
+    <div style={{ marginTop: "24px" }}>
+      <SectionTitle>Reference Ranges</SectionTitle>
+      <div style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "var(--r2)", padding: "16px", fontSize: "12.5px", lineHeight: "1.8", color: "var(--text2)" }}>
+        <div style={{ fontFamily: "var(--font-syne)", fontWeight: 700, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.8px", color: "var(--text3)", marginBottom: "10px" }}>Standard Reference Values Used</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "10px" }}>
+          {[
+            { label: "Normal BP",         value: "< 120/80 mmHg", icon: "fi fi-rr-blood-pressure" },
+{ label: "Resting Heart Rate", value: "60–100 bpm",   icon: "fi fi-rr-heart-rate"     },
+{ label: "BMI Normal",        value: "18.5–24.9",     icon: "fi fi-rr-scale"          },
+{ label: "Fasting Glucose",   value: "70–100 mg/dL",  icon: "fi fi-rr-blood"          },
+{ label: "SpO2 Normal",       value: "≥ 95%",         icon: "fi fi-rr-lungs"          },
+{ label: "Body Temperature",  value: "36.1–37.2°C",   icon: "fi fi-rr-thermometer"    },
+          ].map((r) => (
+            <div key={r.label} style={{ background: "var(--bg3)", borderRadius: "8px", padding: "8px 12px", border: "1px solid var(--border)" }}>
+              <div style={{ fontSize: "10px", color: "var(--text3)" }}>
+                 <i className={r.icon} />
+                {r.label}
+                </div>
+              <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)", marginTop: "2px" }}>{r.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <div style={{ marginTop: "24px" }}>
+      <SectionTitle>About Health Data</SectionTitle>
+      <div style={{ padding: "14px", background: "rgba(77,184,138,0.07)", border: "1px solid rgba(77,184,138,0.2)", borderRadius: "var(--r2)", fontSize: "12px", color: "var(--text2)", lineHeight: "1.7", display: "flex", gap: "12px" }}>
+        <span style={{ fontSize: "20px", flexShrink: 0 }}><i className="fi fi-rr-lock"></i></span>
+        <div>
+          <div style={{ fontWeight: 600, color: "var(--text)", marginBottom: "4px" }}>Your health data stays private</div>
+          All health records, vitals, medications, and appointments are stored securely in your own database and are only accessible by you. No health data is ever shared or sent to third-party services.
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
               {/* ── DATA ── */}
               {section === "data" && (

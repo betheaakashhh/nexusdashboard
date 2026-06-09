@@ -21,6 +21,13 @@ export interface AppSettings {
   defaultContactSort: 'name' | 'recent' | 'added';
   contactSearchFields: ('name' | 'phone' | 'email' | 'tags' | 'notes')[];
   importDuplicateHandling: 'skip' | 'overwrite' | 'merge';
+  healthWeightUnit: 'kg' | 'lbs';
+  healthHeightUnit: 'cm' | 'ft';
+  healthTempUnit: 'celsius' | 'fahrenheit';
+  healthGlucoseUnit: 'mgdl' | 'mmoll';
+  healthDefaultPerson: string;
+  healthShowReminders: boolean;
+  healthApptReminderDays: number;
 }
 
 // Exported so Sidebar and other components can import the type
@@ -41,6 +48,13 @@ export const DEFAULT_SETTINGS: AppSettings = {
   defaultContactSort: 'recent',
   contactSearchFields: ['name', 'phone', 'email'],
   importDuplicateHandling: 'skip',
+  healthWeightUnit: 'kg',
+  healthHeightUnit: 'cm',
+  healthTempUnit: 'celsius',
+  healthGlucoseUnit: 'mgdl',
+  healthDefaultPerson: '',
+  healthShowReminders: false,
+  healthApptReminderDays: 0,
 };
 
 // ── Theme tokens ───────────────────────────────────────────────────────────────

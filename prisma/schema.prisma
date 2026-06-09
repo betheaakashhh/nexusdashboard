@@ -1,4 +1,4 @@
-// prisma/schema.prisma — FULL MERGED SCHEMA with UserSettings + Task time
+// prisma/schema.prisma — FULL MERGED SCHEMA with Health Module
 
 generator client {
   provider = "prisma-client-js"
@@ -28,62 +28,65 @@ model User {
   documentVault     DocumentVault[]
   settings          UserSettings?
   sessions          UserSession[]
+  healthProfiles    HealthProfile[]      // ← NEW
 }
 
 model UserSession {
   id        String   @id @default(cuid())
   userId    String
   token     String   @unique
-  
-
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  device    String  @default("unknown device") // e.g. "Chrome on Windows", "iPhone Safari"
-  browser   String  @default("unknown browser") // e.g. "Chrome", "Firefox"
-  os        String  @default("unknown OS")      // e.g. "Windows", "iOS"
-  ipAddress String  @default("unknown IP") // optional IP address for security monitoring
-  location  String  @default("Location Unknown") // optional geolocation based on IP
+  device    String   @default("unknown device")
+  browser   String   @default("unknown browser")
+  os        String   @default("unknown OS")
+  ipAddress String   @default("unknown IP")
+  location  String   @default("Location Unknown")
   createdAt DateTime @default(now())
   expiresAt DateTime
-  UserAgent String  @default("") @db.Text // full user agent string for analytics
+  UserAgent String   @default("") @db.Text
   lastActive DateTime @default(now())
   revokedAt DateTime?
   updatedAt DateTime @updatedAt
 
-
-
   @@index([userId])
-  @@index([revokedAt, expiresAt]) // for efficient session cleanup
-  
-
+  @@index([revokedAt, expiresAt])
 }
-// ── Per-user settings stored in DB (replaces cookie-based settings) ──────────
+
 model UserSettings {
   id        String   @id @default(cuid())
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Appearance
-  theme           String  @default("dark")       // dark | light | system
+  theme           String  @default("dark")
   accentColor     String  @default("#c9a96e")
   compactMode     Boolean @default(false)
-  defaultLanding  String  @default("contacts")   // contacts | tasks | email | private
-  defaultView     String  @default("cards")       // cards | table
+  defaultLanding  String  @default("contacts")
+  defaultView     String  @default("cards")
 
   // Session
-  sessionTimeout  Int     @default(0)            // 0 | 5 | 15 | 30 | 60
+  sessionTimeout  Int     @default(0)
 
   // Email preferences
   defaultSenderName String @default("")
   defaultFromEmail  String @default("")
   emailSignature    String @default("") @db.Text
   bccSelf           Boolean @default(false)
-  quickRecipients   String  @default("[]")       // JSON array stored as string
+  quickRecipients   String  @default("[]")
 
   // Contact preferences
-  defaultContactSort       String @default("recent")  // name | recent | added
-  contactSearchFields      String @default("[\"name\",\"phone\",\"email\"]") // JSON array
-  importDuplicateHandling  String @default("skip")     // skip | overwrite | merge
+  defaultContactSort       String @default("recent")
+  contactSearchFields      String @default("[\"name\",\"phone\",\"email\"]")
+  importDuplicateHandling  String @default("skip")
+
+  // ── Health preferences (NEW) ──────────────────────────────────────────
+  healthWeightUnit    String  @default("kg")       // kg | lbs
+  healthHeightUnit    String  @default("cm")       // cm | ft
+  healthTempUnit      String  @default("celsius")  // celsius | fahrenheit
+  healthGlucoseUnit   String  @default("mgdl")     // mgdl | mmoll
+  healthDefaultPerson String  @default("")         // profileId of default person
+  healthShowReminders Boolean @default(true)       // appointment reminders
+  healthApptReminderDays Int  @default(1)          // days before appointment to remind
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -94,7 +97,7 @@ model Contact {
   name      String
   phone     String
   email     String?
-  tag       String   @default("personal") // personal | family | work | emergency
+  tag       String   @default("personal")
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -109,11 +112,11 @@ model Contact {
 model Task {
   id        String   @id @default(cuid())
   title     String
-  priority  String   @default("med") // high | med | low
-  due       String?                  // date string YYYY-MM-DD
-  dueTime   String?                  // time string HH:MM (24h)
+  priority  String   @default("med")
+  due       String?
+  dueTime   String?
   done      Boolean  @default(false)
-  notified  Boolean  @default(false) // whether reminder email was sent
+  notified  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -123,7 +126,7 @@ model Task {
   contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   @@index([userId])
-  @@index([done, dueTime]) // for cron queries
+  @@index([done, dueTime])
 }
 
 model Email {
@@ -133,7 +136,7 @@ model Email {
   subject     String
   body        String
   preview     String?
-  tab         String   @default("inbox") // inbox | sent | starred
+  tab         String   @default("inbox")
   unread      Boolean  @default(true)
   starred     Boolean  @default(false)
   sentAt      String?
@@ -146,7 +149,6 @@ model Email {
   @@index([userId])
 }
 
-// ── Password / Credential Vault ───────────────────────────────────────────────
 model VaultEntry {
   id                 String   @id @default(cuid())
   name               String
@@ -164,7 +166,6 @@ model VaultEntry {
   @@index([userId])
 }
 
-// ── Education Records ────────────────────────────────────────────────────────
 model EducationRecord {
   id           String   @id @default(cuid())
   personName   String
@@ -187,7 +188,6 @@ model EducationRecord {
   @@index([userId])
 }
 
-// ── Personal Identity Documents ──────────────────────────────────────────────
 model PersonalDocument {
   id           String   @id @default(cuid())
   personName   String
@@ -209,7 +209,6 @@ model PersonalDocument {
   @@index([userId])
 }
 
-// ── General Document Vault ───────────────────────────────────────────────────
 model DocumentVault {
   id          String   @id @default(cuid())
   name        String
@@ -227,4 +226,163 @@ model DocumentVault {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HEALTH MODULE — NEW MODELS
+// ══════════════════════════════════════════════════════════════════
+
+// ── Family Member Health Profile ──────────────────────────────────
+model HealthProfile {
+  id              String   @id @default(cuid())
+  personName      String
+  relation        String   @default("self")   // self | spouse | child | parent | sibling | other
+  dateOfBirth     String?                      // YYYY-MM-DD
+  gender          String?                      // male | female | other
+  bloodGroup      String?                      // A+ | A- | B+ | B- | AB+ | AB- | O+ | O-
+  allergies       String?  @db.Text            // comma-separated or free text
+  chronicConditions String? @db.Text
+  emergencyContact  String?
+  photoUrl        String?  @db.Text            // base64 or URL
+  notes           String?  @db.Text
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  records         HealthRecord[]
+  vitals          VitalRecord[]
+  medications     Medication[]
+  appointments    HealthAppointment[]
+
+  @@index([userId])
+}
+
+// ── Health Records (lab reports, consultations, vaccinations, etc.) ──
+model HealthRecord {
+  id          String   @id @default(cuid())
+  profileId   String
+  profile     HealthProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  // Record metadata
+  type        String   // blood_test | urine_test | imaging | vaccination | doctor_visit |
+                       // dental | eye_exam | mental_health | surgery | allergy | general
+  title       String
+  date        String   // YYYY-MM-DD
+  doctor      String?
+  hospital    String?
+  diagnosis   String?  @db.Text
+  notes       String?  @db.Text
+
+  // Lab results stored as JSON array: [{name, value, unit, normalMin, normalMax, status}]
+  labResults  String?  @db.Text
+
+  // File attachment
+  fileUrl     String?  @db.Text
+  fileName    String?
+  fileType    String?  // image | pdf | doc
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+
+  @@index([profileId])
+  @@index([userId])
+  @@index([date])
+  @@index([type])
+}
+
+// ── Vital Signs Tracking ────────────────────────────────────────────
+model VitalRecord {
+  id          String   @id @default(cuid())
+  profileId   String
+  profile     HealthProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  date        String   // YYYY-MM-DD
+  time        String?  // HH:MM
+
+  // All vital measurements (null means not recorded)
+  systolic    Int?     // BP systolic in mmHg
+  diastolic   Int?     // BP diastolic in mmHg
+  heartRate   Int?     // bpm
+  weight      Float?   // kg (store in kg, display in user's unit)
+  height      Float?   // cm
+  temperature Float?   // Celsius (store in C, display in user's unit)
+  bloodSugar  Float?   // mg/dL fasting (store in mg/dL)
+  bloodSugarType String? @default("fasting") // fasting | post_meal | random
+  spo2        Int?     // SpO2 percentage
+  bmi         Float?   // calculated or entered
+  respiratoryRate Int? // breaths per minute
+
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+
+  @@index([profileId])
+  @@index([userId])
+  @@index([date])
+}
+
+// ── Medications ────────────────────────────────────────────────────
+model Medication {
+  id           String   @id @default(cuid())
+  profileId    String
+  profile      HealthProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  name         String
+  genericName  String?
+  dosage       String?       // e.g., "500mg"
+  frequency    String?       // e.g., "twice daily"
+  route        String?       // oral | injection | topical | inhaled | other
+  startDate    String?       // YYYY-MM-DD
+  endDate      String?       // null = ongoing
+  prescribedBy String?
+  specialty    String?       // e.g., "Cardiologist"
+  purpose      String?       // why prescribed
+  sideEffects  String?       @db.Text
+  isActive     Boolean       @default(true)
+  notes        String?       @db.Text
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  userId       String
+
+  @@index([profileId])
+  @@index([userId])
+  @@index([isActive])
+}
+
+// ── Doctor Appointments ────────────────────────────────────────────
+model HealthAppointment {
+  id          String   @id @default(cuid())
+  profileId   String
+  profile     HealthProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  title       String
+  doctor      String?
+  specialty   String?
+  hospital    String?
+  date        String   // YYYY-MM-DD
+  time        String?  // HH:MM
+  status      String   @default("scheduled") // scheduled | completed | cancelled | missed
+  reason      String?
+  outcome     String?  @db.Text
+  followUpDate String?
+  notes       String?  @db.Text
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+
+  @@index([profileId])
+  @@index([userId])
+  @@index([date])
+  @@index([status])
 }
