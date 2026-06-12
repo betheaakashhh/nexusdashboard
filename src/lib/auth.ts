@@ -36,10 +36,18 @@ export async function comparePassword(
   return bcrypt.compare(password, hash);
 }
 
-export function getSessionFromRequest(req: NextRequest): JWTPayload | null {
-  const token = req.cookies.get(COOKIE_NAME)?.value;
-  if (!token) return null;
-  return verifyToken(token);
+export function getSessionFromRequest(
+  req: NextRequest
+): JWTPayload | null {
+  // ── existing: web browser sends HttpOnly cookie ──
+  const cookieToken = req.cookies.get('nexus_token')?.value;
+  if (cookieToken) return verifyToken(cookieToken);
+
+  // ── NEW: mobile app sends Authorization: Bearer <jwt> ──
+  const auth = req.headers.get('authorization');
+  if (auth?.startsWith('Bearer ')) return verifyToken(auth.slice(7));
+
+  return null;
 }
 
 export function getClientIp(req: NextRequest): string {
