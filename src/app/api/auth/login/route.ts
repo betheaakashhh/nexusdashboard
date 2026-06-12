@@ -92,6 +92,7 @@ export async function POST(req: NextRequest) {
     });
     const response = NextResponse.json({
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      token,
     });
     response.headers.set('Set-Cookie', setCookieHeader(token));
     return response;
