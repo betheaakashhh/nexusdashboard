@@ -4,7 +4,13 @@ import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/auth';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not configured');
+  }
+
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 export async function GET(req: NextRequest) {
   const session = getSessionFromRequest(req);
@@ -54,7 +60,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Send email using Resend — original simple call, no extra validation
-    await resend.emails.send({
+    await getResend().emails.send({
       from: process.env.RESEND_FROM_EMAIL!,
       to: senderEmail,
       subject,
