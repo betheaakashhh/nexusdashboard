@@ -47,26 +47,9 @@ export default function RegisterPage() {
         return;
       }
 
-      toast.success('Account created! Signing you in…');
-
-      // Auto-login after registration
-      let attempts = 0;
-      const checkAndRedirect = async () => {
-        attempts++;
-        try {
-          const check = await fetch('/api/auth/me', {
-            credentials: 'same-origin',
-            cache: 'no-store',
-          });
-          if (check.ok) {
-            window.location.replace('/dashboard/contacts');
-            return;
-          }
-        } catch { /* ignore */ }
-        if (attempts < 10) setTimeout(checkAndRedirect, 150);
-        else window.location.replace('/dashboard/contacts');
-      };
-      setTimeout(checkAndRedirect, 200);
+      toast.success(data.message || 'Account created! Please verify your email before signing in.');
+      setLoading(false);
+      setTimeout(() => window.location.replace('/login'), 1800);
 
     } catch {
       toast.error('Something went wrong');
@@ -254,7 +237,7 @@ export default function RegisterPage() {
           color: 'var(--text3)',
           lineHeight: 1.6,
         }}>
-          Your data is private. Only you can see your contacts, tasks, and vault.
+          Your data is private. Verify your email after registering to activate sign-in.
         </div>
       </motion.div>
     </div>

@@ -197,7 +197,7 @@ export default function LoginPage() {
                 }}>
                   Password
                 </label>
-                <a href="#" className="nx-help">Forgot password?</a>
+                <a href="/forgot-password" className="nx-help">Forgot password?</a>
               </div>
               <input
                 id="password"

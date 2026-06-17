@@ -1,13 +1,10 @@
-// src/app/api/auth/register/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { hashPassword, signToken, setCookieHeader } from '@/lib/auth';
+import { hashPassword } from '@/lib/auth';
+import { sendVerificationEmail } from '@/lib/email';
+import { createSecureToken, hashToken } from '@/lib/tokens';
 
 export async function POST(req: NextRequest) {
-  if (!process.env.JWT_SECRET) {
-    return NextResponse.json({ error: 'Server misconfiguration: JWT_SECRET missing' }, { status: 500 });
-  }
-
   let name: string, email: string, password: string;
   try {
     const body = await req.json();
@@ -25,22 +22,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
   }
 
-  // Check if email already taken
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     return NextResponse.json({ error: 'An account with that email already exists' }, { status: 409 });
   }
 
+  const token = createSecureToken();
   const hashed = await hashPassword(password);
-  const user = await prisma.user.create({
-    data: { email, password: hashed, name, role: 'user' },
+  await prisma.user.create({
+    data: {
+      email,
+      password: hashed,
+      name,
+      role: 'user',
+      emailVerifiedAt: null,
+      emailVerificationTokens: {
+        create: {
+          tokenHash: hashToken(token),
+          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+        },
+      },
+    },
   });
 
-  // Auto-login: sign token and set cookie
-  const token = signToken({ userId: user.id, email: user.email, role: user.role });
-  const response = NextResponse.json({
-    user: { id: user.id, email: user.email, name: user.name, role: user.role },
+  await sendVerificationEmail(email, token);
+
+  return NextResponse.json({
+    message: 'Account created. Please check your email to verify your account before signing in.',
+    ...(process.env.NODE_ENV !== 'production' ? { verificationToken: token } : {}),
   }, { status: 201 });
-  response.headers.set('Set-Cookie', setCookieHeader(token));
-  return response;
 }
