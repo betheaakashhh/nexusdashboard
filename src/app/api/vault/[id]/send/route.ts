@@ -4,7 +4,13 @@ import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/auth';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not configured');
+  }
+
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = getSessionFromRequest(req);
@@ -26,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   lines.push('\n— Sent via Nexus Vault');
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: process.env.RESEND_FROM_EMAIL!,
       to: recipientEmail,
       subject: `Credentials: ${entry.name}`,

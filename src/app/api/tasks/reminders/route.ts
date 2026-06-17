@@ -27,7 +27,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not configured');
+  }
+
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 // ── Time helpers ──────────────────────────────────────────────────────────────
 function toHHMM(date: Date): string {
@@ -95,7 +101,7 @@ async function sendReminderEmail({
     .filter((l) => l !== undefined)
     .join('\n');
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from,
     to,
     subject,

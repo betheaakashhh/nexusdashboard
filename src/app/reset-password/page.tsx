@@ -1,10 +1,10 @@
 'use client';
 
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
 import toast from 'react-hot-toast';
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const token = useSearchParams().get('token') || '';
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -33,14 +33,22 @@ export default function ResetPasswordPage() {
   }
 
   return (
+    <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: 380, background: '#141412', border: '1px solid rgba(232,229,220,0.10)', borderRadius: 16, padding: 28 }}>
+      <h1 style={{ marginBottom: 8 }}>Choose a new password</h1>
+      <p style={{ color: '#888784', fontSize: 14, marginBottom: 20 }}>Use at least 8 characters.</p>
+      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="New password" style={inputStyle} />
+      <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required placeholder="Confirm password" style={inputStyle} />
+      <button disabled={loading || !token} style={{ width: '100%', padding: 12, border: 0, borderRadius: 10, background: '#c4a882', color: '#1a1a18', fontWeight: 700 }}>{loading ? 'Updating…' : 'Update password'}</button>
+    </form>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#0d0d0c', color: '#e5e5e2', padding: 24 }}>
-      <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: 380, background: '#141412', border: '1px solid rgba(232,229,220,0.10)', borderRadius: 16, padding: 28 }}>
-        <h1 style={{ marginBottom: 8 }}>Choose a new password</h1>
-        <p style={{ color: '#888784', fontSize: 14, marginBottom: 20 }}>Use at least 8 characters.</p>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="New password" style={inputStyle} />
-        <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required placeholder="Confirm password" style={inputStyle} />
-        <button disabled={loading || !token} style={{ width: '100%', padding: 12, border: 0, borderRadius: 10, background: '#c4a882', color: '#1a1a18', fontWeight: 700 }}>{loading ? 'Updating…' : 'Update password'}</button>
-      </form>
+      <Suspense fallback={<div style={{ color: '#888784' }}>Loading reset form…</div>}>
+        <ResetPasswordForm />
+      </Suspense>
     </main>
   );
 }
