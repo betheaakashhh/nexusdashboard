@@ -8,9 +8,13 @@ const COOKIE_NAME = 'nexus_token';
 const PUBLIC_PATHS = [
   '/login',
   '/register',
+  '/forgot-password',
+  '/reset-password',
   '/api/auth/login',
   '/api/auth/logout',
   '/api/auth/register',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
   '/api/auth/setup',
 ];
 
