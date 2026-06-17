@@ -395,6 +395,13 @@ export default function SettingsPage() {
   const [sessions, setSessions] = useState<LoginSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionActionId, setSessionActionId] = useState<string | null>(null);
+  const [historyDownloading, setHistoryDownloading] = useState(false);
+
+  const canChangePassword =
+    pwdForm.current.trim().length > 0 &&
+    pwdForm.next.length >= 8 &&
+    pwdForm.confirm.length >= 8 &&
+    pwdForm.next === pwdForm.confirm;
 
 
 
@@ -550,6 +557,31 @@ export default function SettingsPage() {
       dateStyle: 'medium',
       timeStyle: 'short',
     }).format(new Date(value));
+  }
+
+  async function downloadLoginHistory() {
+    setHistoryDownloading(true);
+    try {
+      const res = await fetch('/api/auth/sessions/export', { credentials: 'include', cache: 'no-store' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed');
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `nexus-login-history-${new Date().toISOString().slice(0, 10)}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success('Login history download started');
+    } catch {
+      toast.error('Failed to download login history');
+    }
+    setHistoryDownloading(false);
   }
 
 
@@ -1106,7 +1138,7 @@ export default function SettingsPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                         <div>
                           <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>Where you are logged in</div>
-                          <div style={{ fontSize: '11.5px', color: 'var(--text3)', marginTop: '2px' }}>Review device, location, and active status. Sign out sessions you do not recognize.</div>
+                          <div style={{ fontSize: '11.5px', color: 'var(--text3)', marginTop: '2px' }}>Only currently signed-in devices are shown here. Logged-out devices are kept in the full history download.</div>
                         </div>
                         <Btn size="sm" variant="ghost" onClick={loadSessions} disabled={sessionsLoading}>{sessionsLoading ? 'Refreshing…' : 'Refresh'}</Btn>
                       </div>
@@ -1116,11 +1148,11 @@ export default function SettingsPage() {
                           <div style={{ fontSize: '12px', color: 'var(--text3)', padding: '10px 0' }}>Loading login activity…</div>
                         )}
                         {!sessionsLoading && sessions.length === 0 && (
-                          <div style={{ fontSize: '12px', color: 'var(--text3)', padding: '10px 0' }}>No login activity found yet.</div>
+                          <div style={{ fontSize: '12px', color: 'var(--text3)', padding: '10px 0' }}>No active login devices found.</div>
                         )}
                         {sessions.map((s) => {
                           const statusColor = s.status === 'active' ? 'var(--green)' : s.status === 'signed_in' ? 'var(--accent2)' : 'var(--red)';
-                          const statusLabel = s.status === 'active' ? 'Active now' : s.status === 'signed_in' ? 'Signed in' : 'Logged out';
+                          const statusLabel = s.status === 'active' ? 'Active now' : 'Signed in';
                           return (
                             <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', padding: '12px', borderRadius: 'var(--r2)', background: 'var(--bg2)', border: `1px solid ${s.isCurrent ? 'var(--accent)' : 'var(--border)'}` }}>
                               <div style={{ minWidth: 0 }}>
@@ -1140,12 +1172,22 @@ export default function SettingsPage() {
                                 onClick={() => revokeSession(s.id, s.isCurrent)}
                                 disabled={Boolean(s.revokedAt) || sessionActionId === s.id}
                               >
-                                {sessionActionId === s.id ? 'Signing out…' : s.revokedAt ? 'Signed out' : 'Log out'}
+                                {sessionActionId === s.id ? 'Signing out…' : 'Log out'}
                               </Btn>
                             </div>
                           );
                         })}
                       </div>
+                    </div>
+
+                    <div style={{ marginTop: '14px', padding: '14px', background: 'var(--bg2)', border: '1px dashed var(--border)', borderRadius: 'var(--r2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}>All-time login credentials history</div>
+                        <div style={{ fontSize: '11.5px', color: 'var(--text3)', marginTop: '2px' }}>Download every login record, including logged-out and expired devices, as a .txt file.</div>
+                      </div>
+                      <Btn size="sm" variant="primary" onClick={downloadLoginHistory} disabled={historyDownloading}>
+                        {historyDownloading ? 'Preparing…' : 'Download .txt'}
+                      </Btn>
                     </div>
                   </div>
 
@@ -1953,7 +1995,7 @@ export default function SettingsPage() {
             <Btn
               variant="primary"
               onClick={handleChangePassword}
-              disabled={pwdLoading}
+              disabled={pwdLoading || !canChangePassword}
             >
               {pwdLoading ? "Saving…" : "Update Password"}
             </Btn>

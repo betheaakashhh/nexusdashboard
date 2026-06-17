@@ -32,30 +32,30 @@ export async function GET(req: NextRequest) {
   }
 
   const sessions = await prisma.userSession.findMany({
-    where: { userId: session.userId },
+    where: {
+      userId: session.userId,
+      revokedAt: null,
+      expiresAt: { gt: new Date() },
+    },
     orderBy: { lastActive: 'desc' },
-    take: 25,
   });
 
   const now = Date.now();
   return NextResponse.json({
     currentSessionId: session.sessionId ?? null,
-    sessions: sessions.map((s) => {
-      const revoked = Boolean(s.revokedAt) || s.expiresAt.getTime() <= now;
-      return {
-        id: s.id,
-        device: s.device,
-        browser: s.browser,
-        os: s.os,
-        ipAddress: s.ipAddress,
-        location: s.location,
-        createdAt: s.createdAt.toISOString(),
-        lastActive: s.lastActive.toISOString(),
-        expiresAt: s.expiresAt.toISOString(),
-        revokedAt: s.revokedAt?.toISOString() ?? null,
-        isCurrent: s.id === session.sessionId,
-        status: getSessionStatus(s.lastActive, s.expiresAt, s.revokedAt, now),
-      };
-    }),
+    sessions: sessions.map((s) => ({
+      id: s.id,
+      device: s.device,
+      browser: s.browser,
+      os: s.os,
+      ipAddress: s.ipAddress,
+      location: s.location,
+      createdAt: s.createdAt.toISOString(),
+      lastActive: s.lastActive.toISOString(),
+      expiresAt: s.expiresAt.toISOString(),
+      revokedAt: s.revokedAt?.toISOString() ?? null,
+      isCurrent: s.id === session.sessionId,
+      status: getSessionStatus(s.lastActive, s.expiresAt, s.revokedAt, now),
+    })),
   });
 }
