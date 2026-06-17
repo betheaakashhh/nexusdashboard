@@ -53,6 +53,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
+  if (!user.emailVerifiedAt) {
+    return NextResponse.json({ error: 'Please verify your email before signing in' }, { status: 403 });
+  }
+
   // ── Step 4: verify password ─────────────────────────────────────────────
   let valid: boolean;
   try {
