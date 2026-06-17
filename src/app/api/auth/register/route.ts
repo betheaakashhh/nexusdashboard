@@ -22,33 +22,40 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return NextResponse.json({ error: 'An account with that email already exists' }, { status: 409 });
-  }
+  try {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return NextResponse.json({ error: 'An account with that email already exists' }, { status: 409 });
+    }
 
-  const token = createSecureToken();
-  const hashed = await hashPassword(password);
-  await prisma.user.create({
-    data: {
-      email,
-      password: hashed,
-      name,
-      role: 'user',
-      emailVerifiedAt: null,
-      emailVerificationTokens: {
-        create: {
-          tokenHash: hashToken(token),
-          expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+    const token = createSecureToken();
+    const hashed = await hashPassword(password);
+    await prisma.user.create({
+      data: {
+        email,
+        password: hashed,
+        name,
+        role: 'user',
+        emailVerifiedAt: null,
+        emailVerificationTokens: {
+          create: { tokenHash: hashToken(token), expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24) },
         },
       },
-    },
-  });
+    });
 
-  await sendVerificationEmail(email, token);
+    // Account already exists at this point — an email failure shouldn't 500.
+    try {
+      await sendVerificationEmail(email, token);
+    } catch (emailErr) {
+      console.error('register: failed to send verification email:', emailErr);
+    }
 
-  return NextResponse.json({
-    message: 'Account created. Please check your email to verify your account before signing in.',
-    ...(process.env.NODE_ENV !== 'production' ? { verificationToken: token } : {}),
-  }, { status: 201 });
+    return NextResponse.json({
+      message: 'Account created. Please check your email to verify your account before signing in.',
+      ...(process.env.NODE_ENV !== 'production' ? { verificationToken: token } : {}),
+    }, { status: 201 });
+  } catch (err) {
+    console.error('register error:', err);
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 });
+  }
 }

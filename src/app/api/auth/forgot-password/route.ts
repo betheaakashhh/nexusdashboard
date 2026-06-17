@@ -13,15 +13,32 @@ export async function POST(req: NextRequest) {
   }
   if (!email) return NextResponse.json({ error: 'Email is required' }, { status: 400 });
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (user) {
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      // Same response whether or not the account exists — avoids leaking
+      // which emails are registered.
+      return NextResponse.json({ message: 'If that account exists, a reset link has been sent.' });
+    }
+
     const token = createSecureToken();
     await prisma.passwordResetToken.create({
       data: { userId: user.id, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + 1000 * 60 * 60) },
     });
-    await sendPasswordResetEmail(email, token);
-    return NextResponse.json({ message: 'If that account exists, a reset link has been sent.', ...(process.env.NODE_ENV !== 'production' ? { resetToken: token } : {}) });
-  }
 
-  return NextResponse.json({ message: 'If that account exists, a reset link has been sent.' });
+    // Token is already saved — an email-provider failure shouldn't 500 the request.
+    try {
+      await sendPasswordResetEmail(email, token);
+    } catch (emailErr) {
+      console.error('forgot-password: failed to send reset email:', emailErr);
+    }
+
+    return NextResponse.json({
+      message: 'If that account exists, a reset link has been sent.',
+      ...(process.env.NODE_ENV !== 'production' ? { resetToken: token } : {}),
+    });
+  } catch (err) {
+    console.error('forgot-password error:', err);
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 });
+  }
 }

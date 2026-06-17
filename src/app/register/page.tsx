@@ -1,5 +1,4 @@
 'use client';
-// src/app/register/page.tsx
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -10,6 +9,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm]   = useState('');
   const [loading, setLoading]   = useState(false);
+  const [registered, setRegistered] = useState(false);
+  const [devVerifyToken, setDevVerifyToken] = useState('');
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { nameRef.current?.focus(); }, []);
@@ -49,7 +50,16 @@ export default function RegisterPage() {
 
       toast.success(data.message || 'Account created! Please verify your email before signing in.');
       setLoading(false);
-      setTimeout(() => window.location.replace('/login'), 1800);
+      setRegistered(true);
+
+      if (data.verificationToken) {
+        // Dev mode — no email provider configured. Let the user verify
+        // directly instead of getting stuck waiting on an email that
+        // will never arrive.
+        setDevVerifyToken(data.verificationToken);
+      } else {
+        setTimeout(() => window.location.replace('/login'), 1800);
+      }
 
     } catch {
       toast.error('Something went wrong');
@@ -114,109 +124,154 @@ export default function RegisterPage() {
           }}>
             Nexus
           </div>
-          <div style={{ color: 'var(--text3)', fontSize: '13px' }}>Create your account</div>
+          <div style={{ color: 'var(--text3)', fontSize: '13px' }}>
+            {registered ? 'Almost there' : 'Create your account'}
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '14px' }}>
-            <label style={labelStyle}>Full Name</label>
-            <input
-              ref={nameRef}
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="John Smith"
-              required
-              style={inputStyle}
-              onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-              onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--border)')}
-            />
-          </div>
+        {!registered ? (
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: '14px' }}>
+              <label style={labelStyle}>Full Name</label>
+              <input
+                ref={nameRef}
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="John Smith"
+                required
+                style={inputStyle}
+                onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--border)')}
+              />
+            </div>
 
-          <div style={{ marginBottom: '14px' }}>
-            <label style={labelStyle}>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              style={inputStyle}
-              onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-              onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--border)')}
-            />
-          </div>
+            <div style={{ marginBottom: '14px' }}>
+              <label style={labelStyle}>Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                style={inputStyle}
+                onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--border)')}
+              />
+            </div>
 
-          <div style={{ marginBottom: '14px' }}>
-            <label style={labelStyle}>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min. 8 characters"
-              required
-              style={inputStyle}
-              onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-              onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--border)')}
-            />
-          </div>
+            <div style={{ marginBottom: '14px' }}>
+              <label style={labelStyle}>Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Min. 8 characters"
+                required
+                style={inputStyle}
+                onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--border)')}
+              />
+            </div>
 
-          <div style={{ marginBottom: '24px' }}>
-            <label style={labelStyle}>Confirm Password</label>
-            <input
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Repeat password"
-              required
+            <div style={{ marginBottom: '24px' }}>
+              <label style={labelStyle}>Confirm Password</label>
+              <input
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="Repeat password"
+                required
+                style={{
+                  ...inputStyle,
+                  borderColor: confirm && confirm !== password ? 'var(--red)' : 'var(--border)',
+                }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = confirm !== password ? 'var(--red)' : 'var(--accent)')}
+                onBlur={(e)  => (e.currentTarget.style.borderColor = confirm && confirm !== password ? 'var(--red)' : 'var(--border)')}
+              />
+              {confirm && confirm !== password && (
+                <div style={{ fontSize: '11px', color: 'var(--red)', marginTop: '4px' }}>Passwords do not match</div>
+              )}
+            </div>
+
+            <motion.button
+              type="submit"
+              disabled={loading}
+              whileHover={{ scale: loading ? 1 : 1.01 }}
+              whileTap={{ scale: loading ? 1 : 0.98 }}
               style={{
-                ...inputStyle,
-                borderColor: confirm && confirm !== password ? 'var(--red)' : 'var(--border)',
+                width: '100%',
+                padding: '11px',
+                background: loading ? 'var(--accent3)' : 'var(--accent)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 'var(--r2)',
+                fontSize: '14px',
+                fontWeight: 600,
+                fontFamily: 'var(--font-syne)',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'background 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
               }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = confirm !== password ? 'var(--red)' : 'var(--accent)')}
-              onBlur={(e)  => (e.currentTarget.style.borderColor = confirm && confirm !== password ? 'var(--red)' : 'var(--border)')}
-            />
-            {confirm && confirm !== password && (
-              <div style={{ fontSize: '11px', color: 'var(--red)', marginTop: '4px' }}>Passwords do not match</div>
+            >
+              {loading && (
+                <span style={{
+                  width: '14px', height: '14px',
+                  border: '2px solid rgba(255,255,255,0.3)',
+                  borderTopColor: '#fff',
+                  borderRadius: '50%',
+                  animation: 'spin 0.8s linear infinite',
+                  display: 'inline-block',
+                }} />
+              )}
+              {loading ? 'Creating account…' : 'Create Account'}
+            </motion.button>
+          </form>
+        ) : (
+          <div>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '48px', height: '48px', borderRadius: '50%',
+              background: 'rgba(34,199,122,0.12)', margin: '0 auto 16px',
+              fontSize: '22px',
+            }}>
+              ✓
+            </div>
+            <div style={{ textAlign: 'center', color: 'var(--text2)', fontSize: '13.5px', lineHeight: 1.7 }}>
+              Account created for <strong style={{ color: 'var(--text)' }}>{email}</strong>. Check your inbox to verify before signing in.
+            </div>
+
+            {devVerifyToken && (
+              <div style={{
+                marginTop: '14px',
+                padding: '12px 14px',
+                borderRadius: 'var(--r2)',
+                background: 'rgba(196,168,130,0.08)',
+                border: '1px solid rgba(196,168,130,0.25)',
+                fontSize: '12.5px',
+                color: 'var(--text2)',
+                lineHeight: 1.6,
+              }}>
+                <strong>Dev mode:</strong> no email is sent outside production.{' '}
+                <a
+                  href={`/api/auth/verify-email?token=${encodeURIComponent(devVerifyToken)}`}
+                  style={{ color: 'var(--accent2)', textDecoration: 'underline' }}
+                >
+                  Click here to verify your email →
+                </a>
+              </div>
+            )}
+
+            {!devVerifyToken && (
+              <div style={{ marginTop: '14px', fontSize: '12px', color: 'var(--text3)', textAlign: 'center' }}>
+                Redirecting to sign in…
+              </div>
             )}
           </div>
-
-          <motion.button
-            type="submit"
-            disabled={loading}
-            whileHover={{ scale: loading ? 1 : 1.01 }}
-            whileTap={{ scale: loading ? 1 : 0.98 }}
-            style={{
-              width: '100%',
-              padding: '11px',
-              background: loading ? 'var(--accent3)' : 'var(--accent)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 'var(--r2)',
-              fontSize: '14px',
-              fontWeight: 600,
-              fontFamily: 'var(--font-syne)',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'background 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-            }}
-          >
-            {loading && (
-              <span style={{
-                width: '14px', height: '14px',
-                border: '2px solid rgba(255,255,255,0.3)',
-                borderTopColor: '#fff',
-                borderRadius: '50%',
-                animation: 'spin 0.8s linear infinite',
-                display: 'inline-block',
-              }} />
-            )}
-            {loading ? 'Creating account…' : 'Create Account'}
-          </motion.button>
-        </form>
+        )}
 
         {/* Link to login */}
         <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '12.5px', color: 'var(--text3)' }}>
@@ -227,18 +282,20 @@ export default function RegisterPage() {
         </div>
 
         {/* Info note */}
-        <div style={{
-          marginTop: '16px',
-          padding: '10px 12px',
-          background: 'var(--bg3)',
-          borderRadius: 'var(--r2)',
-          border: '1px solid var(--border)',
-          fontSize: '11.5px',
-          color: 'var(--text3)',
-          lineHeight: 1.6,
-        }}>
-          Your data is private. Verify your email after registering to activate sign-in.
-        </div>
+        {!registered && (
+          <div style={{
+            marginTop: '16px',
+            padding: '10px 12px',
+            background: 'var(--bg3)',
+            borderRadius: 'var(--r2)',
+            border: '1px solid var(--border)',
+            fontSize: '11.5px',
+            color: 'var(--text3)',
+            lineHeight: 1.6,
+          }}>
+            Your data is private. Verify your email after registering to activate sign-in.
+          </div>
+        )}
       </motion.div>
     </div>
   );
