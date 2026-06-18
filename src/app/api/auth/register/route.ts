@@ -43,11 +43,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Account already exists at this point — an email failure shouldn't 500.
     try {
       await sendVerificationEmail(email, token);
     } catch (emailErr) {
       console.error('register: failed to send verification email:', emailErr);
+      await prisma.user.delete({ where: { email } }).catch((cleanupErr) => {
+        console.error('register: failed to clean up unverified account after email failure:', cleanupErr);
+      });
+      return NextResponse.json(
+        { error: 'Account was not created because the verification email could not be delivered. Please try again later.' },
+        { status: 502 },
+      );
     }
 
     return NextResponse.json({
