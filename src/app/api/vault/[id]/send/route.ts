@@ -32,12 +32,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   lines.push('\n— Sent via Nexus Vault');
 
   try {
-    await getResend().emails.send({
-      from: process.env.RESEND_FROM_EMAIL!,
-      to: recipientEmail,
-      subject: `Credentials: ${entry.name}`,
-      text: lines.join('\n'),
-    });
+    // src/app/api/vault/[id]/send/route.ts
+const { error } = await getResend().emails.send({
+  from: process.env.RESEND_FROM_EMAIL!,
+  to: recipientEmail,
+  subject: `Credentials: ${entry.name}`,
+  text: lines.join('\n'),
+});
+if (error) throw new Error(error.message);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error('Vault send email failed:', err);

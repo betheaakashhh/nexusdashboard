@@ -101,12 +101,8 @@ async function sendReminderEmail({
     .filter((l) => l !== undefined)
     .join('\n');
 
-  await getResend().emails.send({
-    from,
-    to,
-    subject,
-    text: body,
-  });
+  const { error } = await getResend().emails.send({ from, to, subject, text: body });
+if (error) throw new Error(error.message);
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────

@@ -60,12 +60,14 @@ export async function POST(req: NextRequest) {
 
   try {
     // Send email using Resend — original simple call, no extra validation
-    await getResend().emails.send({
-      from: process.env.RESEND_FROM_EMAIL!,
-      to: senderEmail,
-      subject,
-      text: body,
-    });
+    // src/app/api/emails/route.ts
+    const { error } = await getResend().emails.send({
+    from: process.env.RESEND_FROM_EMAIL!,
+    to: senderEmail,
+    subject,
+    text: body,
+});
+if (error) throw new Error(error.message);
 
     // Save to DB after successful send
     const email = await prisma.email.create({
