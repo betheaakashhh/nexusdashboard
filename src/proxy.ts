@@ -16,6 +16,8 @@ const PUBLIC_PATHS = [
   '/api/auth/forgot-password',
   '/api/auth/reset-password',
   '/api/auth/setup',
+  '/api/auth/verify-email',
+  '/api/auth/verification-status'
 ];
 
 export function proxy(request: NextRequest) {

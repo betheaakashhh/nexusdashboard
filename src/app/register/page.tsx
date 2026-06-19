@@ -14,6 +14,31 @@ export default function RegisterPage() {
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { nameRef.current?.focus(); }, []);
+  useEffect(() => {
+  // Don't poll in dev mode — devVerifyToken already gives a direct link.
+  if (!registered || devVerifyToken || !email) return;
+
+  let cancelled = false;
+  const interval = setInterval(async () => {
+    try {
+      const res = await fetch(`/api/auth/verification-status?email=${encodeURIComponent(email)}`, {
+        cache: 'no-store',
+      });
+      const data = await res.json();
+      if (!cancelled && data.verified) {
+        clearInterval(interval);
+        window.location.replace('/dashboard');
+      }
+    } catch {
+      // transient network errors — just try again next tick
+    }
+  }, 3000);
+
+  return () => {
+    cancelled = true;
+    clearInterval(interval);
+  };
+}, [registered, devVerifyToken, email]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,9 +82,7 @@ export default function RegisterPage() {
         // directly instead of getting stuck waiting on an email that
         // will never arrive.
         setDevVerifyToken(data.verificationToken);
-      } else {
-        setTimeout(() => window.location.replace('/login'), 1800);
-      }
+      } 
 
     } catch {
       toast.error('Something went wrong');
@@ -267,7 +290,7 @@ export default function RegisterPage() {
 
             {!devVerifyToken && (
               <div style={{ marginTop: '14px', fontSize: '12px', color: 'var(--text3)', textAlign: 'center' }}>
-                Redirecting to sign in…
+                Waiting for you to click the link in your email — this page will update automatically once it's verified.
               </div>
             )}
           </div>
