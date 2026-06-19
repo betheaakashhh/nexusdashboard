@@ -2,15 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/auth';
-import { Resend } from 'resend';
+import { sendBrevoEmail } from '@/lib/email';
 
-function getResend() {
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error('RESEND_API_KEY is not configured');
-  }
 
-  return new Resend(process.env.RESEND_API_KEY);
-}
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = getSessionFromRequest(req);
@@ -32,14 +26,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   lines.push('\n— Sent via Nexus Vault');
 
   try {
-    // src/app/api/vault/[id]/send/route.ts
-const { error } = await getResend().emails.send({
-  from: process.env.RESEND_FROM_EMAIL!,
+await sendBrevoEmail({
   to: recipientEmail,
   subject: `Credentials: ${entry.name}`,
   text: lines.join('\n'),
 });
-if (error) throw new Error(error.message);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error('Vault send email failed:', err);

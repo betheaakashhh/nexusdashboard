@@ -2,15 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/auth';
-import { Resend } from 'resend';
+import { sendBrevoEmail } from '@/lib/email';
 
-function getResend() {
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error('RESEND_API_KEY is not configured');
-  }
 
-  return new Resend(process.env.RESEND_API_KEY);
-}
 
 export async function GET(req: NextRequest) {
   const session = getSessionFromRequest(req);
@@ -59,15 +53,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Send email using Resend — original simple call, no extra validation
-    // src/app/api/emails/route.ts
-    const { error } = await getResend().emails.send({
-    from: process.env.RESEND_FROM_EMAIL!,
-    to: senderEmail,
-    subject,
-    text: body,
-});
-if (error) throw new Error(error.message);
+    await sendBrevoEmail({ to: senderEmail, subject, text: body });
 
     // Save to DB after successful send
     const email = await prisma.email.create({

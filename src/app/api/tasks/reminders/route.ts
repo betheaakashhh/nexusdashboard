@@ -25,15 +25,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Resend } from 'resend';
+import { sendBrevoEmail } from '@/lib/email';
 
-function getResend() {
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error('RESEND_API_KEY is not configured');
-  }
 
-  return new Resend(process.env.RESEND_API_KEY);
-}
 
 // ── Time helpers ──────────────────────────────────────────────────────────────
 function toHHMM(date: Date): string {
@@ -55,7 +49,6 @@ function buildDueDate(due: string, dueTime: string): Date {
 // ── Email sender ──────────────────────────────────────────────────────────────
 async function sendReminderEmail({
   to,
-  from,
   taskTitle,
   priority,
   due,
@@ -64,7 +57,6 @@ async function sendReminderEmail({
   type,
 }: {
   to: string;
-  from: string;
   taskTitle: string;
   priority: string;
   due: string;
@@ -101,8 +93,7 @@ async function sendReminderEmail({
     .filter((l) => l !== undefined)
     .join('\n');
 
-  const { error } = await getResend().emails.send({ from, to, subject, text: body });
-if (error) throw new Error(error.message);
+await sendBrevoEmail({ to, subject, text: body });
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
@@ -153,8 +144,7 @@ async function run() {
       (task.user.settings?.defaultFromEmail ?? '').trim() ||
       task.user.email;
 
-    const fromEmail = process.env.RESEND_FROM_EMAIL!;
-
+    
     const dueDate = buildDueDate(due, dueTime);
     const diffMs  = dueDate.getTime() - now.getTime();
 
@@ -175,7 +165,6 @@ async function run() {
       try {
         await sendReminderEmail({
           to: recipientEmail,
-          from: fromEmail,
           taskTitle: task.title,
           priority: task.priority,
           due,
@@ -209,7 +198,7 @@ async function run() {
       try {
         await sendReminderEmail({
           to: recipientEmail,
-          from: fromEmail,
+          
           taskTitle: task.title,
           priority: task.priority,
           due,
