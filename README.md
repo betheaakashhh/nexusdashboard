@@ -4,17 +4,6 @@ A private all-in-one personal dashboard with contact management, email, task tra
 
 ---
 
-## Preview
-
-GitHub doesn't execute HTML/JS inside a rendered README, so the interactive showcase can't be embedded directly on this page. To view it:
-
-- **Locally:** clone the repo and open [`nexus_dashboard_showcase.html`](./nexus_dashboard_showcase.html) in your browser.
-- **Live link:** host the file for free with GitHub Pages (Settings → Pages → deploy from branch) and swap the line below for your published URL:
-
-  **[View the live showcase →](https://your-username.github.io/nexus-dashboard/nexus_dashboard_showcase.html)**
-
----
-
 ## What's Inside
 
 | Module | Description |
